@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analisador de Pedidos WMS - Pro</title>
-    
-    <!-- Biblioteca para ler arquivos Excel e CSV -->
+    <title>Dashboard de Análise WMS - Pro</title>
+    <!-- Biblioteca para ler arquivos Excel (XLSX) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
@@ -17,6 +15,8 @@
             --secondary-color: #6c757d;
             --product-primary: #fd7e14;
             --product-light: #fff2e7;
+            --setor-primary: #198754;
+            --setor-light: #e8f3ee;
             --success-color: #198754;
             --warning-color: #ffc107;
             --warning-light: #fffcf1;
@@ -27,7 +27,7 @@
             --text-color: #343a40;
             --text-light: #6c757d;
             --border-color: #dee2e6;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px_20px rgba(0, 0, 0, 0.05);
             --border-radius: 0.75rem;
         }
 
@@ -43,7 +43,7 @@
 
         .container {
             width: 95%;
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 20px auto;
             background: var(--card-background);
             padding: 2.5rem;
@@ -52,23 +52,6 @@
             border: 1px solid #e9ecef;
             position: relative;
         }
-        
-        .app-header h1 {
-            font-weight: 700;
-            font-size: 2.25em;
-            margin: 0;
-            display: flex;
-            align-items: center;
-        }
-        .app-header h1 svg { margin-right: 12px; }
-        .app-header p {
-            font-size: 1.1em;
-            color: var(--text-light);
-            margin: 0.5rem 0 0 0;
-        }
-        
-        #rota-view .app-header h1 { color: var(--primary-color); }
-        #produto-view .app-header h1 { color: var(--product-primary); }
 
         h2 {
             color: var(--primary-color);
@@ -79,239 +62,178 @@
             font-size: 1.75em;
             font-weight: 600;
         }
+
+        #produto-view h2 { color: var(--product-primary); border-bottom-color: var(--product-light); }
+        #setor-view h2 { color: var(--setor-primary); border-bottom-color: var(--setor-light); }
         
-        #produto-view h2 {
-             color: var(--product-primary);
-             border-bottom-color: var(--product-light);
-        }
-
-        .file-inputs-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .file-drop-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed var(--border-color);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            width: 100%;
-            box-sizing: border-box;
-            background-color: #fcfdff;
-            cursor: pointer;
-            transition: border-color 0.3s, background-color 0.3s;
-            text-align: center;
-            height: 100%;
-        }
-        .file-drop-area.dragover {
-            border-color: var(--primary-color);
-            background-color: var(--primary-light);
-        }
-        .file-drop-area p {
-            margin: 0.5rem 0 0;
-            color: var(--text-light);
-            font-weight: 500;
-        }
+        .file-inputs-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .file-drop-area { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--border-color); padding: 1.5rem; border-radius: var(--border-radius); width: 100%; box-sizing: border-box; background-color: #fcfdff; cursor: pointer; transition: border-color 0.3s, background-color 0.3s; text-align: center; height: 100%; }
+        .file-drop-area.dragover { border-color: var(--primary-color); background-color: var(--primary-light); }
+        .file-drop-area p { margin: 0.5rem 0 0; color: var(--text-light); font-weight: 500; }
         .file-drop-area input[type="file"] { display: none; }
         .file-drop-area.loaded { border-color: var(--success-color); background-color: #f0fff8; }
 
-        .filter-container, .search-container {
-            background-color: var(--background-color);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 2rem;
+        .reload-files-container {
             display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 1.5rem;
-            border: 1px solid #e9ecef;
-            position: relative;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding-top: 1rem;
         }
-        .filter-container label { font-weight: 600; color: var(--text-color); font-size: 1em; flex-shrink: 0;}
-        .filter-container select, .filter-container input, .search-container input {
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
+        #reload-files-btn {
+            padding: 0.75rem 1.5rem;
             font-size: 1em;
-            flex-grow: 1;
-            background-color: #fff;
-            font-family: 'Poppins', sans-serif;
-            transition: box-shadow 0.2s, border-color 0.2s;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-background);
+            color: var(--primary-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .filter-container select:focus, .filter-container input:focus, .search-container input:focus {
-            outline: none;
+        #reload-files-btn:hover {
+            background-color: var(--primary-light);
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px var(--primary-light);
         }
+
+        .filter-container, .search-container { background-color: var(--background-color); padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; border: 1px solid #e9ecef; position: relative; }
+        .filter-container label { font-weight: 600; color: var(--text-color); font-size: 1em; flex-shrink: 0; }
+        .filter-container select, .filter-container input, .search-container input { padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 1em; flex-grow: 1; background-color: #fff; font-family: 'Poppins', sans-serif; transition: box-shadow 0.2s, border-color 0.2s; }
+        .filter-container select:focus, .filter-container input:focus, .search-container input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-light); }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; background: #fff; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--shadow); }
         th, td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid #f1f3f5; }
         thead { background-color: #f8f9fa; color: var(--text-light); font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; }
         tbody tr:not(.product-details-row):hover { background-color: var(--primary-light); }
-        
+
         .hidden { display: none !important; }
 
-        .view-switcher {
-            display: flex;
-            gap: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 2rem;
-        }
-        .view-switcher button {
-            padding: 0.75rem 1.5rem;
-            font-size: 1em;
-            font-weight: 600;
-            border: none;
-            background: none;
-            cursor: pointer;
-            color: var(--text-light);
-            border-bottom: 3px solid transparent;
-            transition: color 0.2s, border-bottom-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .view-switcher { display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; }
+        .view-switcher button { padding: 0.75rem 1.5rem; font-size: 1em; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--text-light); border-bottom: 3px solid transparent; transition: color 0.2s, border-bottom-color 0.2s; display: flex; align-items: center; gap: 8px; }
         .view-switcher button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         #produto-view .view-switcher button.active { color: var(--product-primary); border-bottom-color: var(--product-primary); }
+        #setor-view .view-switcher button.active { color: var(--setor-primary); border-bottom-color: var(--setor-primary); }
 
         .expandable-row { cursor: pointer; transition: background-color 0.2s; }
         .expandable-row td:first-child::before { content: '▶'; display: inline-block; margin-right: 10px; font-size: 0.8em; transition: transform 0.2s; }
         .expandable-row.open td:first-child::before { transform: rotate(90deg); }
-        
-        .summary-card {
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 2rem;
-            border-left: 5px solid;
-            box-shadow: var(--shadow);
-        }
+
+        .summary-card { padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; border-left: 5px solid; box-shadow: var(--shadow); }
         #rota-view .summary-card { background-color: var(--primary-light); border-color: var(--primary-color); color: var(--primary-color); }
         #produto-view .summary-card { background-color: var(--product-light); border-color: var(--product-primary); color: var(--product-primary); }
         .summary-card h2 { margin-top: 0; font-size: 1.2em; background: none; box-shadow: none; padding: 0; color: inherit; border: none; font-weight: 500; }
         .summary-card p { font-size: 1.5em; font-weight: 700; margin: 0.5rem 0 0; }
         .summary-card .address-info { font-size: 1em; font-weight: 500; opacity: 0.9; }
 
-        .copy-button {
-            padding: 0.75rem 1.5rem;
-            font-size: 1em;
-            font-weight: 600;
-            border: none;
-            background-color: var(--secondary-color);
-            color: #fff;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .copy-button:hover { background-color: #5a6268; }
+        .geral-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+        .geral-summary-card { background-color: var(--card-background); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.5rem; border: 1px solid var(--border-color);}
+        .geral-summary-card .icon { font-size: 2.5em; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .geral-summary-card .icon.unidades { background-color: var(--primary-light); color: var(--primary-color); }
+        .geral-summary-card .icon.skus { background-color: var(--product-light); color: var(--product-primary); }
+        .geral-summary-card .info p { margin: 0; font-size: 1em; color: var(--text-light); }
+        .geral-summary-card .info .value { font-size: 1.75em; font-weight: 700; color: var(--text-color); }
 
-        .loader-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(255, 255, 255, 0.85);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 2000; font-size: 1.5em; font-weight: 600; color: var(--primary-color);
-            backdrop-filter: blur(4px);
-        }
-        .loader-spinner {
-            border: 4px solid var(--primary-light);
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
+        .copy-button { padding: 0.5rem 1rem; font-size: 0.9em; font-weight: 500; border: 1px solid var(--border-color); background-color: #fff; color: var(--secondary-color); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; margin-left: auto; display: flex; align-items: center; gap: 6px; }
+        .copy-button:hover { background-color: var(--secondary-color); color: #fff; border-color: var(--secondary-color); }
+        #product-filters .copy-button { padding: 0.75rem 1.5rem; font-size: 1em; font-weight: 600; }
+
+        .loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; font-size: 1.5em; font-weight: 600; color: var(--primary-color); backdrop-filter: blur(4px); }
+        .loader-spinner { border: 4px solid var(--primary-light); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .notification {
-            position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
-            border-radius: 0.5rem; color: #fff; font-weight: 600; z-index: 3000;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            transform: translateX(120%); opacity: 0; visibility: hidden;
-        }
+        .notification { position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 0.5rem; color: #fff; font-weight: 600; z-index: 3000; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; transform: translateX(120%); opacity: 0; visibility: hidden; }
         .notification.show { transform: translateX(0); opacity: 1; visibility: visible; }
         .notification.success { background-color: var(--success-color); }
         .notification.error { background-color: var(--error-color); }
         .notification.warning { background-color: var(--warning-color); color: var(--text-color); }
 
-        .suggestions-container {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border: 1px solid var(--border-color);
-            border-top: none;
-            border-radius: 0 0 var(--border-radius) var(--border-radius);
-            box-shadow: var(--shadow);
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 100;
+        .suggestions-container { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 var(--border-radius) var(--border-radius); box-shadow: var(--shadow); max-height: 300px; overflow-y: auto; z-index: 100; }
+        .suggestion-item { padding: 0.75rem 1.5rem; cursor: pointer; transition: background-color 0.2s; }
+        .suggestion-item:hover { background-color: var(--primary-light); }
+        .suggestion-item small { color: var(--text-light); display: block; }
+        
+        .warning-card { padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; border-left: 5px solid var(--warning-color); background-color: var(--warning-light); color: var(--warning-dark); }
+        .warning-card h2 { color: var(--warning-dark); margin-top: 0; font-size: 1.2em; border: none; padding: 0; }
+        .warning-card ul { list-style-type: none; padding-left: 0; margin: 0.5rem 0 0; columns: 3; -webkit-columns: 3; -moz-columns: 3; }
+        
+        /* Estilos para Acordeão de Lojas Faltantes */
+        .missing-stores-accordion-item {
+            border: 1px solid #ffe69c;
+            border-radius: var(--border-radius);
+            margin-top: 0.75rem;
+            overflow: hidden;
+            background-color: #fff;
         }
-        .suggestion-item {
-            padding: 0.75rem 1.5rem;
+        .missing-stores-accordion-header {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--warning-light);
             cursor: pointer;
             transition: background-color 0.2s;
-        }
-        .suggestion-item:hover {
-            background-color: var(--primary-light);
-        }
-        .suggestion-item small {
-            color: var(--text-light);
-            display: block;
-        }
-        
-        .warning-card {
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 2rem;
-            border-left: 5px solid var(--warning-color);
-            background-color: var(--warning-light);
+            font-weight: 600;
             color: var(--warning-dark);
         }
-        .warning-card h2 {
-            color: var(--warning-dark);
-            margin-top: 0;
-            font-size: 1.2em;
-            border: none;
-            padding: 0;
+        .missing-stores-accordion-header:hover {
+            background-color: #fff3cd;
         }
-        .warning-card ul {
-            list-style-type: none;
-            padding-left: 0;
-            margin: 0.5rem 0 0;
-            columns: 3;
-            -webkit-columns: 3;
-            -moz-columns: 3;
+        .missing-stores-accordion-header::before {
+            content: '▶';
+            display: inline-block;
+            font-size: 0.8em;
+            margin-right: 10px;
+            transition: transform 0.3s ease;
         }
-        @media (max-width: 992px) {
-            .warning-card ul { columns: 2; -webkit-columns: 2; -moz-columns: 2; }
+        .missing-stores-accordion-item.open .missing-stores-accordion-header::before {
+            transform: rotate(90deg);
         }
-        @media (max-width: 768px) {
-            .warning-card ul { columns: 1; -webkit-columns: 1; -moz-columns: 1; }
+        .missing-stores-accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+        .missing-stores-accordion-item.open .missing-stores-accordion-content {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .missing-stores-accordion-content ul {
+            padding: 0.75rem 1.25rem 1.25rem;
+            margin: 0;
+            columns: 2;
+            -webkit-columns: 2;
+            -moz-columns: 2;
+        }
+        .missing-stores-accordion-content li {
+            padding: 0.25rem 0;
         }
 
+        /* Estilos para Análise por Setor (Accordion) */
+        .setor-accordion-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 1rem; overflow: hidden; }
+        .setor-accordion-header { display: flex; align-items: center; padding: 1rem 1.5rem; background-color: #f8f9fa; cursor: pointer; transition: background-color 0.2s; }
+        .setor-accordion-header:hover { background-color: #f1f3f5; }
+        .setor-accordion-header h3 { margin: 0; font-size: 1.25em; font-weight: 600; color: var(--setor-primary); flex-grow: 1; display: flex; align-items: center; gap: 10px;}
+        .setor-accordion-header h3::before { content: '▶'; display: inline-block; font-size: 0.8em; transition: transform 0.3s ease; }
+        .setor-accordion-item.open .setor-accordion-header h3::before { transform: rotate(90deg); }
+        .setor-summary-info { display: flex; gap: 1.5rem; font-size: 0.9em; font-weight: 500; color: var(--text-light); }
+        .setor-accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; background: #fff; }
+        .setor-accordion-item.open .setor-accordion-content { max-height: 2000px; /* Valor alto para permitir expansão */ }
+        .setor-accordion-content .content-wrapper { padding: 1.5rem; }
+        .setor-accordion-content table { box-shadow: none; margin-bottom: 0; }
+        .setor-top20-summary { background-color: var(--setor-light); color: var(--setor-primary); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; font-weight: 500; text-align: center; border: 1px solid #a3cfbb; font-size: 1.05em; }
+        .setor-top20-summary strong { font-weight: 700; }
+
+        @media (max-width: 992px) { .warning-card ul { columns: 2; -webkit-columns: 2; -moz-columns: 2; } }
+        @media (max-width: 768px) { .warning-card ul { columns: 1; -webkit-columns: 1; -moz-columns: 1; } .file-inputs-container { grid-template-columns: 1fr; } .geral-summary-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-
     <div id="notification" class="notification"></div>
 
     <div class="container">
-        <div id="loader" class="loader-overlay hidden">
-            <div class="loader-spinner"></div>
-            A processar...
-        </div>
-        
+        <div id="loader" class="loader-overlay hidden"><div class="loader-spinner"></div>A processar...</div>
+
         <div class="view-switcher">
             <button id="switchToRota" class="active">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18.5a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 3 0v12.5zM12 12.5a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 3 0v6.5zM6 6.5a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 3 0v.5z"/></svg>
@@ -321,32 +243,47 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
                 Análise por Produto
             </button>
+            <button id="switchToSetor">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7h-4a3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3h4a7 7 0 0 0-7-7v4a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3v4Z"/><path d="M22 12a7 7 0 0 0-7-7v4a3 3 0 0 1 3 3h4Z"/><path d="M2 12a7 7 0 0 0 7 7v-4a3 3 0 0 1-3-3H2Z"/><path d="M12 2a7 7 0 0 0-7 7h4a3 3 0 0 1 3-3V2Z"/></svg>
+                Análise por Setor
+            </button>
         </div>
 
-        <div class="file-inputs-container">
+        <div id="geral-summary-container" class="hidden"></div>
+
+        <div id="file-inputs-container" class="file-inputs-container">
             <label for="fileInput" id="fileInputArea" class="file-drop-area">
                 <input type="file" id="fileInput" accept=".csv, .xls, .xlsx">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color);"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
-                <p><strong>1. Planilha de Pedidos</strong><br>Arraste e solte ou clique para selecionar</p>
+                <p><strong>1. Planilha de Pedidos</strong><br>Arraste e solte ou clique</p>
             </label>
             <label for="addressFileInput" id="addressFileInputArea" class="file-drop-area">
                 <input type="file" id="addressFileInput" accept=".csv, .xls, .xlsx">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--secondary-color);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                <p><strong>2. Planilha de Endereços (Opcional)</strong><br>Arraste e solte ou clique para selecionar</p>
+                <p><strong>2. Planilha de Endereços</strong><br>Arraste e solte ou clique</p>
             </label>
         </div>
+        
+        <div id="reload-files-container" class="reload-files-container hidden">
+            <button id="reload-files-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 7.24 4.12M3.51 15A9 9 0 0 0 16.76 19.88"></path></svg>
+                Carregar Novos Arquivos
+            </button>
+        </div>
 
+
+        <!-- Visualização por Rota -->
         <div id="rota-view">
             <div id="rota-analysis-content" class="hidden">
                  <div class="filter-container">
-                    <label for="rotaFilter">Filtrar por Rota:</label>
-                    <select id="rotaFilter"></select>
+                    <label for="rotaFilter">Filtrar por Rota:</label><select id="rotaFilter"></select>
                 </div>
                 <div id="missing-stores-container"></div>
             </div>
             <div id="rota-results-container"></div>
         </div>
 
+        <!-- Visualização por Produto -->
         <div id="produto-view" class="hidden">
             <div id="product-search-content" class="hidden">
                 <div class="search-container">
@@ -355,582 +292,635 @@
                 </div>
                 <div id="product-analysis-content" class="hidden">
                     <div id="product-filters" class="filter-container">
-                        <label for="productRotaFilter">Rota:</label>
-                        <select id="productRotaFilter"></select>
-                        <label for="productFilialFilter">Filial:</label>
-                        <select id="productFilialFilter"></select>
+                        <label for="productRotaFilter">Rota:</label><select id="productRotaFilter"></select>
+                        <label for="productFilialFilter">Filial:</label><select id="productFilialFilter"></select>
                         <button id="copyProductDataBtn" class="copy-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                            Copiar Dados
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copiar Dados
                         </button>
                     </div>
                 </div>
             </div>
             <div id="produto-results-container"></div>
         </div>
+        
+        <!-- Visualização por Setor -->
+        <div id="setor-view" class="hidden">
+            <div id="setor-results-container"></div>
+        </div>
+
     </div>
 
     <script>
-        let fullData = [];
-        let productAddresses = new Map();
-        
-        const masterStoreList = new Map([
-            ['VD825', { name: 'DSP JEQUIE', rota: '6' }],
-            ['VD992', { name: 'DSP VITORIA DA CONQUISTA', rota: '6' }],
-            ['L2437', { name: 'DSP VITORIA DA CONQUISTA II', rota: '6' }],
-            ['L2527', { name: 'DSP VITORIA DA CONQUISTA JURACY', rota: '6' }],
-            ['VD863', { name: 'DSP BARREIRAS', rota: '6' }],
-            ['VD862', { name: 'DSP LUIS EDUARDO MAGALHAES', rota: '6' }],
-            ['L2554', { name: 'DSP ITABUNA III', rota: '6' }],
-            ['L2290', { name: 'DSP LUIS EDUARDO MAGALHAES II', rota: '6' }],
-            ['L2291', { name: 'DSP SANTO ANTONIO DE JESUS', rota: '6' }],
-            ['L2412', { name: 'DSP ILHEUS', rota: '6' }],
-            ['L2662', { name: 'DSP SHOPPING BOULEVARD', rota: '7' }],
-            ['L2127', { name: 'DSP FEIRA DE SANTANA IV', rota: '7' }],
-            ['VD390', { name: 'DSP FEIRA DE SANTANA', rota: '7' }],
-            ['L2116', { name: 'DSP FEIRA DE SANTANA III', rota: '7' }],
-            ['VD630', { name: 'DSP DIAS DAVILA', rota: '7' }],
-            ['VD552', { name: 'DSP CAMACARI', rota: '7' }],
-            ['L2531', { name: 'DSP GUARAJUBA', rota: '7' }],
-            ['L2204', { name: 'DSP SHOPPING CENTER LAPA', rota: '8' }],
-            ['L2538', { name: 'DSP SALVADOR 1', rota: '8' }],
-            ['L2052', { name: 'DSP METRO SALVADOR', rota: '8' }],
-            ['L2283', { name: 'DSP SHOPPING VITORIA BOULEVARD', rota: '8' }],
-            ['L2161', { name: 'DSP CANELA II', rota: '8' }],
-            ['VD395', { name: 'DSP CANELA', rota: '8' }],
-            ['L2064', { name: 'DSP SALVADOR CHAME CHAME', rota: '8' }],
-            ['L2173', { name: 'DSP PARQUE SHOPPING BAHIA', rota: '9' }],
-            ['L2119', { name: 'DSP ESTRADA DO COCO', rota: '9' }],
-            ['L2363', { name: 'DSP VILAS DO ATLANTICO I', rota: '9' }],
-            ['L2668', { name: 'DSP ALPHAVILLE LITORAL NORTE', rota: '9' }],
-            ['VD547', { name: 'DSP ITAPUA', rota: '9' }],
-            ['VD458', { name: 'DSP ITAPUA II', rota: '9' }],
-            ['VD744', { name: 'DSP PIATA', rota: '9' }],
-            ['VD737', { name: 'DSP PATAMARES', rota: '9' }],
-            ['VD546', { name: 'DSP JORGE AMADO', rota: '9' }],
-            ['L2003', { name: 'DSP TROBOGY', rota: '10' }],
-            ['VD834', { name: 'DSP SAO RAFAEL', rota: '10' }],
-            ['L2174', { name: 'DSP SHOPPING PARALELA', rota: '10' }],
-            ['VD845', { name: 'DSP CAJAZEIRAS', rota: '10' }],
-            ['L2221', { name: 'DSP PERIPERI', rota: '10' }],
-            ['VD643', { name: 'DSP SIMOES FILHO', rota: '10' }],
-            ['VD620', { name: 'DSP CANDEIAS', rota: '10' }],
-            ['L2077', { name: 'DSP SHOPPING BELLA VISTA', rota: '11' }],
-            ['L2211', { name: 'DSP PERNAMBUES', rota: '11' }],
-            ['VD544', { name: 'DSP MATATU', rota: '11' }],
-            ['VD929', { name: 'DSP ACUPE DE BROTAS', rota: '11' }],
-            ['L2631', { name: 'DSP BROTAS III', rota: '11' }],
-            ['VD399', { name: 'DSP NOVA BROTAS', rota: '11' }],
-            ['VD981', { name: 'DSP VASCO DA GAMA', rota: '11' }],
-            ['L2277', { name: 'DSP FEDERACAO SALVADOR', rota: '11' }],
-            ['VD397', { name: 'DSP ONDINA', rota: '11' }],
-            ['L2243', { name: 'DSP SHOPPING BARRA SALVADOR', rota: '12' }],
-            ['L2088', { name: 'DSP RIO VERMELHO II', rota: '12' }],
-            ['VD432', { name: 'DSP PITUBA III', rota: '12' }],
-            ['L2056', { name: 'DSP PITUBA IV', rota: '12' }],
-            ['VD890', { name: 'DSP CAMINHO DAS ARVORES II', rota: '12' }],
-            ['VD712', { name: 'DSP ANITA GARIBALDI', rota: '12' }],
-            ['VD398', { name: 'DSP MIGUEL CALMON', rota: '12' }],
-            ['L2191', { name: 'DSP MARES', rota: '12' }],
-            ['VD697', { name: 'DSP IMBUI', rota: '13' }],
-            ['VD550', { name: 'DSP COSTA AZUL', rota: '13' }],
-            ['L2123', { name: 'DSP COSTA AZUL II', rota: '13' }],
-            ['VD936', { name: 'DSP STIEP', rota: '13' }],
-            ['VD393', { name: 'DSP CABULA', rota: '13' }],
-            ['VD821', { name: 'DSP SALVADOR III', rota: '13' }],
-            ['VD530', { name: 'DSP LAURO DE FREITAS', rota: '14' }],
-            ['VD558', { name: 'DSP STELLA MARIS', rota: '14' }],
-            ['VD926', { name: 'DSP CABULA II', rota: '15' }],
-            ['L2169', { name: 'DSP CANDEAL', rota: '15' }],
-            ['L2093', { name: 'DSP SHOPPING DA BAHIA 3 PISO', rota: '15' }],
-            ['L2092', { name: 'DSP SHOPPING DA BAHIA 2 PISO', rota: '15' }],
-            ['L2091', { name: 'DSP SHOPPING DA BAHIA 1 PISO', rota: '15' }],
-            ['VD713', { name: 'DSP LARGO DO TAMARINEIRO', rota: '16' }],
-            ['VD970', { name: 'DSP CAMINHO DE AREIA', rota: '16' }],
-            ['VD604', { name: 'DSP GRACA', rota: '16' }],
-            ['VD220', { name: 'DSP PITUBA', rota: '16' }],
-            ['VD434', { name: 'DSP ALTO DO ITAIGARA', rota: '16' }],
-            ['VD568', { name: 'DSP CAMINHO DAS ARVORES', rota: '16' }],
-            ['VD913', { name: 'DSP CAMINHO DAS ARVORES III', rota: '20' }],
-            ['VD435', { name: 'DSP SHOPPING SALVADOR', rota: '20' }],
-            ['L2280', { name: 'DSP ALPHAVILLE SALVADOR', rota: '20' }],
-            ['L2507', { name: 'DSP SHOPPING PATTEO OLINDA', rota: '1' }],
-            ['L2526', { name: 'DSP SHOPPING CARUARU', rota: '1' }],
-            ['L2438', { name: 'DSP CARUARU II', rota: '1' }],
-            ['L2384', { name: 'DSP VITORIA DE SANTO ANTAO', rota: '1' }],
-            ['VD794', { name: 'DSP JANGA', rota: '1' }],
-            ['VD871', { name: 'DSP OLINDA II', rota: '1' }],
-            ['VD698', { name: 'DSP OLINDA', rota: '2' }],
-            ['L2493', { name: 'DSP ESPINHEIRO', rota: '2' }],
-            ['VD288', { name: 'DSP RECIFE CENTRO II', rota: '2' }],
-            ['L2589', { name: 'DSP IPUTINGA', rota: '2' }],
-            ['L2368', { name: 'DSP CAXANGA', rota: '2' }],
-            ['L2386', { name: 'DSP IMBIRIBEIRA', rota: '2' }],
-            ['L2421', { name: 'DSP IPSEP', rota: '2' }],
-            ['VD772', { name: 'DSP BOA VIAGEM', rota: '3' }],
-            ['L2617', { name: 'DPSP CONSELHEIRO AGUIAR III', rota: '3' }],
-            ['VD755', { name: 'DSP BOA VIAGEM II', rota: '3' }],
-            ['L2534', { name: 'DSP DOMINGOS FERREIRA', rota: '3' }],
-            ['L2453', { name: 'DSP RIBEIRO DE BRITO', rota: '3' }],
-            ['VD770', { name: 'DSP BOA VIAGEM V', rota: '3' }],
-            ['L2597', { name: 'DSP SETUBAL', rota: '3' }],
-            ['VD767', { name: 'DSP GUARARAPES III', rota: '3' }],
-            ['L2371', { name: 'DSP ROSA E SILVA', rota: '4' }],
-            ['L2375', { name: 'DSP ESTRADA DO ARRAIAL', rota: '4' }],
-            ['VD695', { name: 'DSP TORRE', rota: '4' }],
-            ['L2383', { name: 'DSP MADALENA II', rota: '4' }],
-            ['L2074', { name: 'DSP SHOPPING RIOMAR', rota: '4' }],
-            ['VD690', { name: 'DSP BOA VIAGEM IV', rota: '4' }],
-            ['L2508', { name: 'DSP SHOPPING RECIFE', rota: '4' }],
-            ['L2428', { name: 'DSP PETROLINA', rota: '5' }],
-            ['L2429', { name: 'DSP PETROLINA CENTRO', rota: '5' }],
-            ['L2496', { name: 'DSP PETROLINA II', rota: '5' }],
-            ['L2582', { name: 'DSP SHOPPING RIVER', rota: '5' }]
-        ]);
-
-        const notificationElement = document.getElementById('notification');
-        let notificationTimeout;
-
-        function showNotification(message, type = 'success', duration = 3500) {
-            clearTimeout(notificationTimeout);
-            notificationElement.textContent = message;
-            notificationElement.className = 'notification';
-            notificationElement.classList.add(type, 'show');
-            notificationTimeout = setTimeout(() => notificationElement.classList.remove('show'), duration);
-        }
-
-        function normalizeProductCode(code) {
-            if (code === null || typeof code === 'undefined') return '';
-            const strCode = String(code).trim();
-            if (/^\d+$/.test(strCode)) {
-                return String(parseInt(strCode, 10));
-            }
-            return strCode;
-        }
-
-        function setupFileDropArea(areaId, inputId) {
-            const dropArea = document.getElementById(areaId);
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
-            });
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
-            });
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
-            });
-            dropArea.addEventListener('drop', e => {
-                document.getElementById(inputId).files = e.dataTransfer.files;
-                document.getElementById(inputId).dispatchEvent(new Event('change'));
-            }, false);
-        }
-
-        function handleFileSelection(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // IIFE para encapsular o código e evitar poluição do escopo global
+        (function() {
+            const masterStoreList = new Map([
+                ['VD825', { name: 'DSP JEQUIE', rota: '6' }], ['VD992', { name: 'DSP VITORIA DA CONQUISTA', rota: '6' }], ['L2437', { name: 'DSP VITORIA DA CONQUISTA II', rota: '6' }], ['L2527', { name: 'DSP VITORIA DA CONQUISTA JURACY', rota: '6' }], ['VD863', { name: 'DSP BARREIRAS', rota: '6' }], ['VD862', { name: 'DSP LUIS EDUARDO MAGALHAES', rota: '6' }], ['L2554', { name: 'DSP ITABUNA III', rota: '6' }], ['L2290', { name: 'DSP LUIS EDUARDO MAGALHAES II', rota: '6' }], ['L2291', { name: 'DSP SANTO ANTONIO DE JESUS', rota: '6' }], ['L2412', { name: 'DSP ILHEUS', rota: '6' }], ['L2662', { name: 'DSP SHOPPING BOULEVARD', rota: '7' }], ['L2127', { name: 'DSP FEIRA DE SANTANA IV', rota: '7' }], ['VD390', { name: 'DSP FEIRA DE SANTANA', rota: '7' }], ['L2116', { name: 'DSP FEIRA DE SANTANA III', rota: '7' }], ['VD630', { name: 'DSP DIAS DAVILA', rota: '7' }], ['VD552', { name: 'DSP CAMACARI', rota: '7' }], ['L2531', { name: 'DSP GUARAJUBA', rota: '7' }], ['L2204', { name: 'DSP SHOPPING CENTER LAPA', rota: '8' }], ['L2538', { name: 'DSP SALVADOR 1', rota: '8' }], ['L2052', { name: 'DSP METRO SALVADOR', rota: '8' }], ['L2283', { name: 'DSP SHOPPING VITORIA BOULEVARD', rota: '8' }], ['L2161', { name: 'DSP CANELA II', rota: '8' }], ['VD395', { name: 'DSP CANELA', rota: '8' }], ['L2064', { name: 'DSP SALVADOR CHAME CHAME', rota: '8' }], ['L2173', { name: 'DSP PARQUE SHOPPING BAHIA', rota: '9' }], ['L2119', { name: 'DSP ESTRADA DO COCO', rota: '9' }], ['L2363', { name: 'DSP VILAS DO ATLANTICO I', rota: '9' }], ['L2668', { name: 'DSP ALPHAVILLE LITORAL NORTE', rota: '9' }], ['VD547', { name: 'DSP ITAPUA', rota: '9' }], ['VD458', { name: 'DSP ITAPUA II', rota: '9' }], ['VD744', { name: 'DSP PIATA', rota: '9' }], ['VD737', { name: 'DSP PATAMARES', rota: '9' }], ['VD546', { name: 'DSP JORGE AMADO', rota: '9' }], ['L2003', { name: 'DSP TROBOGY', rota: '10' }], ['VD834', { name: 'DSP SAO RAFAEL', rota: '10' }], ['L2174', { name: 'DSP SHOPPING PARALELA', rota: '10' }], ['VD845', { name: 'DSP CAJAZEIRAS', rota: '10' }], ['L2221', { name: 'DSP PERIPERI', rota: '10' }], ['VD643', { name: 'DSP SIMOES FILHO', rota: '10' }], ['VD620', { name: 'DSP CANDEIAS', rota: '10' }], ['L2077', { name: 'DSP SHOPPING BELLA VISTA', rota: '11' }], ['L2211', { name: 'DSP PERNAMBUES', rota: '11' }], ['VD544', { name: 'DSP MATATU', rota: '11' }], ['VD929', { name: 'DSP ACUPE DE BROTAS', rota: '11' }], ['L2631', { name: 'DSP BROTAS III', rota: '11' }], ['VD399', { name: 'DSP NOVA BROTAS', rota: '11' }], ['VD981', { name: 'DSP VASCO DA GAMA', rota: '11' }], ['L2277', { name: 'DSP FEDERACAO SALVADOR', rota: '11' }], ['VD397', { name: 'DSP ONDINA', rota: '11' }], ['L2243', { name: 'DSP SHOPPING BARRA SALVADOR', rota: '12' }], ['L2088', { name: 'DSP RIO VERMELHO II', rota: '12' }], ['VD432', { name: 'DSP PITUBA III', rota: '12' }], ['L2056', { name: 'DSP PITUBA IV', rota: '12' }], ['VD890', { name: 'DSP CAMINHO DAS ARVORES II', rota: '12' }], ['VD712', { name: 'DSP ANITA GARIBALDI', rota: '12' }], ['VD398', { name: 'DSP MIGUEL CALMON', rota: '12' }], ['L2191', { name: 'DSP MARES', rota: '12' }], ['VD697', { name: 'DSP IMBUI', rota: '13' }], ['VD550', { name: 'DSP COSTA AZUL', rota: '13' }], ['L2123', { name: 'DSP COSTA AZUL II', rota: '13' }], ['VD936', { name: 'DSP STIEP', rota: '13' }], ['VD393', { name: 'DSP CABULA', rota: '13' }], ['VD821', { name: 'DSP SALVADOR III', rota: '13' }], ['VD530', { name: 'DSP LAURO DE FREITAS', rota: '14' }], ['VD558', { name: 'DSP STELLA MARIS', rota: '14' }], ['VD926', { name: 'DSP CABULA II', rota: '15' }], ['L2169', { name: 'DSP CANDEAL', rota: '15' }], ['L2093', { name: 'DSP SHOPPING DA BAHIA 3 PISO', rota: '15' }], ['L2092', { name: 'DSP SHOPPING DA BAHIA 2 PISO', rota: '15' }], ['L2091', { name: 'DSP SHOPPING DA BAHIA 1 PISO', rota: '15' }], ['VD713', { name: 'DSP LARGO DO TAMARINEIRO', rota: '16' }], ['VD970', { name: 'DSP CAMINHO DE AREIA', rota: '16' }], ['VD604', { name: 'DSP GRACA', rota: '16' }], ['VD220', { name: 'DSP PITUBA', rota: '16' }], ['VD434', { name: 'DSP ALTO DO ITAIGARA', rota: '16' }], ['VD568', { name: 'DSP CAMINHO DAS ARVORES', rota: '16' }], ['VD913', { name: 'DSP CAMINHO DAS ARVORES III', rota: '20' }], ['VD435', { name: 'DSP SHOPPING SALVADOR', rota: '20' }], ['L2280', { name: 'DSP ALPHAVILLE SALVADOR', rota: '20' }], ['L2507', { name: 'DSP SHOPPING PATTEO OLINDA', rota: '1' }], ['L2526', { name: 'DSP SHOPPING CARUARU', rota: '1' }], ['L2438', { name: 'DSP CARUARU II', rota: '1' }], ['L2384', { name: 'DSP VITORIA DE SANTO ANTAO', rota: '1' }], ['VD794', { name: 'DSP JANGA', rota: '1' }], ['VD871', { name: 'DSP OLINDA II', rota: '1' }], ['VD698', { name: 'DSP OLINDA', rota: '2' }], ['L2493', { name: 'DSP ESPINHEIRO', rota: '2' }], ['VD288', { name: 'DSP RECIFE CENTRO II', rota: '2' }], ['L2589', { name: 'DSP IPUTINGA', rota: '2' }], ['L2368', { name: 'DSP CAXANGA', rota: '2' }], ['L2386', { name: 'DSP IMBIRIBEIRA', rota: '2' }], ['L2421', { name: 'DSP IPSEP', rota: '2' }], ['VD772', { name: 'DSP BOA VIAGEM', rota: '3' }], ['L2617', { name: 'DPSP CONSELHEIRO AGUIAR III', rota: '3' }], ['VD755', { name: 'DSP BOA VIAGEM II', rota: '3' }], ['L2534', { name: 'DSP DOMINGOS FERREIRA', rota: '3' }], ['L2453', { name: 'DSP RIBEIRO DE BRITO', rota: '3' }], ['VD770', { name: 'DSP BOA VIAGEM V', rota: '3' }], ['L2597', { name: 'DSP SETUBAL', rota: '3' }], ['VD767', { name: 'DSP GUARARAPES III', rota: '3' }], ['L2371', { name: 'DSP ROSA E SILVA', rota: '4' }], ['L2375', { name: 'DSP ESTRADA DO ARRAIAL', rota: '4' }], ['VD695', { name: 'DSP TORRE', rota: '4' }], ['L2383', { name: 'DSP MADALENA II', rota: '4' }], ['L2074', { name: 'DSP SHOPPING RIOMAR', rota: '4' }], ['VD690', { name: 'DSP BOA VIAGEM IV', rota: '4' }], ['L2508', { name: 'DSP SHOPPING RECIFE', rota: '4' }], ['L2428', { name: 'DSP PETROLINA', rota: '5' }], ['L2429', { name: 'DSP PETROLina CENTRO', rota: '5' }], ['L2496', { name: 'DSP PETROLINA II', rota: '5' }], ['L2582', { name: 'DSP SHOPPING RIVER', rota: '5' }]
+            ]);
             
-            loader.classList.remove('hidden');
+            const appState = { fullData: [], productAddresses: new Map() };
 
-            setTimeout(() => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    try {
-                        const data = e.target.result;
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const targetSheetName = 'Loja Cross';
-                        const worksheet = workbook.Sheets[workbook.SheetNames.find(name => name.toLowerCase().trim() === targetSheetName.toLowerCase()) || workbook.SheetNames[0]];
-                        
-                        fullData = XLSX.utils.sheet_to_json(worksheet);
-                        
-                        if (fullData.length === 0) {
-                            showNotification('A planilha de pedidos está vazia.', 'warning');
-                            return;
-                        }
-
-                        document.getElementById('fileInputArea').classList.add('loaded');
-                        processAndDisplayRotaData(fullData);
-                        document.getElementById('rota-analysis-content').classList.remove('hidden');
-                        document.getElementById('product-search-content').classList.remove('hidden');
-                        showNotification('Planilha de pedidos carregada!', 'success');
-                    } catch (error) {
-                        console.error("Erro ao processar arquivo de pedidos:", error);
-                        showNotification('Erro ao ler a planilha de pedidos.', 'error');
-                    } finally {
-                        loader.classList.add('hidden');
-                    }
-                };
-                reader.onerror = () => {
-                    loader.classList.add('hidden');
-                    showNotification('Falha ao ler o arquivo de pedidos.', 'error');
-                };
-                reader.readAsArrayBuffer(file);
-            }, 50);
-        }
-        
-        function handleAddressFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            loader.classList.remove('hidden');
-            setTimeout(() => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    try {
-                        const data = e.target.result;
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const addressData = XLSX.utils.sheet_to_json(worksheet);
-                        
-                        productAddresses.clear();
-                        addressData.forEach(row => {
-                            const code = normalizeProductCode(row['Código Produto'] || row['Item']);
-                            const address = String(row['Endereço'] || '').trim();
-                            if (code && address) {
-                                productAddresses.set(code, address);
-                            }
-                        });
-
-                        document.getElementById('addressFileInputArea').classList.add('loaded');
-                        showNotification(`${productAddresses.size} endereços carregados.`, 'success');
-
-                        if (fullData.length > 0) {
-                            processAndDisplayRotaData(fullData);
-                        }
-
-                    } catch (error) {
-                        console.error("Erro ao processar arquivo de endereços:", error);
-                        showNotification('Erro ao ler a planilha de endereços.', 'error');
-                    } finally {
-                        loader.classList.add('hidden');
-                    }
-                };
-                reader.onerror = () => {
-                    loader.classList.add('hidden');
-                    showNotification('Falha ao ler o arquivo de endereços.', 'error');
-                };
-                reader.readAsArrayBuffer(file);
-            }, 50);
-        }
-
-        function processAndDisplayRotaData(data) {
-            const rotasData = {};
-            const storesWithValidOrders = new Set();
-
-            for (const row of data) {
-                const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
-                const quantidade = parseFloat(row['Sum Qtd Solicitada']);
-                const pedidoWMS = String(row['Nº Pedido WMS'] || '').trim();
-                
-                if (isNaN(quantidade) || !pedidoWMS || quantidade <= 0) continue;
-
-                storesWithValidOrders.add(codigoLoja);
-
-                const storeInfo = masterStoreList.get(codigoLoja) || { name: String(row['Nome da Loja'] || 'N/A').trim(), rota: String(row['Rota'] || 'N/A').trim() };
-                const rota = storeInfo.rota;
-                const nomeLoja = storeInfo.name;
-
-                if (!rota || !nomeLoja) continue;
-                
-                if (!rotasData[rota]) rotasData[rota] = { pedidos: {} };
-                if (!rotasData[rota].pedidos[pedidoWMS]) rotasData[rota].pedidos[pedidoWMS] = { nome: nomeLoja, codigo: codigoLoja, produtos: [] };
-                
-                const itemCode = normalizeProductCode(row['Item']);
-
-                rotasData[rota].pedidos[pedidoWMS].produtos.push({ 
-                    item: itemCode, 
-                    descr: String(row['Descr'] || '').trim(), 
-                    qtd: quantidade 
-                });
-            }
-            
-            const missingStores = [];
-            masterStoreList.forEach((info, codigo) => {
-                if (!storesWithValidOrders.has(codigo)) {
-                    missingStores.push(`${info.name} (${codigo})`);
-                }
-            });
-
-            displayMissingStores(missingStores);
-            displayRotaResults(rotasData);
-            populateRotaFilter(Object.keys(rotasData));
-        }
-
-        function displayMissingStores(stores) {
-            const container = document.getElementById('missing-stores-container');
-            container.innerHTML = '';
-            if (stores.length > 0) {
-                let listItems = '';
-                stores.sort().forEach(store => {
-                    listItems += `<li>${store}</li>`;
-                });
-                container.innerHTML = `
-                    <div class="warning-card">
-                        <h2>Filiais da Lista Mestra Sem Pedidos Válidos</h2>
-                        <ul>${listItems}</ul>
-                    </div>`;
-            }
-        }
-
-        function displayRotaResults(rotasData) {
-            const resultsContainer = document.getElementById('rota-results-container');
-            resultsContainer.innerHTML = ""; 
-            const sortedRotas = Object.keys(rotasData).sort((a, b) => Number(a) - Number(b));
-            
-            if (sortedRotas.length === 0 && document.getElementById('missing-stores-container').innerHTML === '') {
-                resultsContainer.innerHTML = "<div class='summary-card'>Nenhum pedido válido encontrado.</div>";
-                return;
-            }
-
-            for (const rota of sortedRotas) {
-                const rotaBlock = document.createElement('div');
-                rotaBlock.className = 'rota-block'; 
-                rotaBlock.dataset.rota = rota;
-                const rotaInfo = rotasData[rota];
-                const totalPedidos = Object.keys(rotaInfo.pedidos).length;
-                const totalItensGeral = Object.values(rotaInfo.pedidos).reduce((sum, pedido) => sum + pedido.produtos.reduce((s, p) => s + p.qtd, 0), 0);
-                
-                rotaBlock.innerHTML = `<h2>Rota ${rota}</h2>
-                    <div class="summary-card">
-                        <h2>Resumo da Rota</h2>
-                        <p>${Math.round(totalItensGeral)} Itens | ${totalPedidos} Pedido(s)</p>
-                    </div>`;
-                
-                const table = document.createElement('table');
-                table.innerHTML = `<thead><tr><th>VD/L</th><th>Filial</th><th>Nº Pedido WMS</th></tr></thead>`;
-                const tbody = document.createElement('tbody');
-                Object.keys(rotaInfo.pedidos).sort().forEach(pedido => {
-                    const loja = rotaInfo.pedidos[pedido];
-                    const mainRow = tbody.insertRow();
-                    mainRow.className = 'expandable-row';
-                    mainRow.innerHTML = `<td>${loja.codigo}</td><td>${loja.nome}</td><td>${pedido}</td>`;
-                    
-                    const detailsRow = tbody.insertRow();
-                    detailsRow.className = 'hidden';
-                    const detailsCell = detailsRow.insertCell(0);
-                    detailsCell.colSpan = 3;
-                    let productsHtml = `<div style="padding: 1rem; background-color: #f8f9fa;"><table style="box-shadow: none;"><thead><tr><th>Item</th><th>Endereço</th><th>Descrição</th><th>Qtd.</th></tr></thead><tbody>`;
-                    loja.produtos.forEach(p => {
-                        const address = productAddresses.get(p.item) || 'N/A';
-                        productsHtml += `<tr><td>${p.item}</td><td>${address}</td><td>${p.descr}</td><td>${p.qtd}</td></tr>`;
-                    });
-                    productsHtml += '</tbody></table></div>';
-                    detailsCell.innerHTML = productsHtml;
-
-                    mainRow.addEventListener('click', () => {
-                        mainRow.classList.toggle('open');
-                        detailsRow.classList.toggle('hidden');
-                    });
-                });
-                table.appendChild(tbody);
-                rotaBlock.appendChild(table);
-                resultsContainer.appendChild(rotaBlock);
-            }
-        }
-        
-        function populateRotaFilter(rotas) {
-            const filterSelect = document.getElementById('rotaFilter');
-            filterSelect.innerHTML = '<option value="all">Mostrar Todas as Rotas</option>';
-            if (rotas.length > 0) {
-                rotas.sort((a,b) => Number(a) - Number(b)).forEach(rota => {
-                    filterSelect.innerHTML += `<option value="${rota}">Rota ${rota}</option>`;
-                });
-            }
-        }
-
-        function displayProductResults(data) {
-            const resultsContainer = document.getElementById('produto-results-container');
-            resultsContainer.innerHTML = "";
-            document.getElementById('product-analysis-content').classList.add('hidden');
-            
-            const groupedByItem = data.reduce((acc, row) => {
-                const itemCode = normalizeProductCode(row['Item']);
-                if (!itemCode) return acc;
-
-                if (!acc[itemCode]) {
-                    acc[itemCode] = { descr: String(row['Descr'] || 'N/A').trim(), rows: [] };
-                }
-                acc[itemCode].rows.push(row);
-                return acc;
-            }, {});
-
-            if (Object.keys(groupedByItem).length === 0) {
-                resultsContainer.innerHTML = `<div class="summary-card">Nenhum resultado encontrado.</div>`;
-                return;
-            }
-            
-            document.getElementById('product-analysis-content').classList.remove('hidden');
-            let allRowsForFiltering = [];
-            
-            Object.keys(groupedByItem).sort().forEach(itemCode => {
-                const product = groupedByItem[itemCode];
-                let totalQuantity = 0;
-
-                const tableRows = product.rows.map(row => {
-                    const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
-                    const quantidade = parseFloat(row['Sum Qtd Solicitada']) || 0;
-                    totalQuantity += quantidade;
-                    
-                    const storeInfo = masterStoreList.get(codigoLoja) || { name: String(row['Nome da Loja'] || 'N/A').trim(), rota: String(row['Rota'] || 'N/A').trim() };
-                    const rota = storeInfo.rota;
-                    const nomeLoja = storeInfo.name;
-                    
-                    allRowsForFiltering.push(row);
-                    return `<tr data-rota="${rota}" data-filial="${nomeLoja}"><td>${rota}</td><td>${codigoLoja}</td><td>${nomeLoja}</td><td>${row['Nº Pedido WMS'] || ''}</td><td>${quantidade}</td></tr>`;
-                }).join('');
-                
-                const address = productAddresses.get(itemCode) || 'N/A';
-                const summaryCard = `<div class="summary-card">
-                    <h2>${product.descr} (Cód: ${itemCode})</h2>
-                    <p class="address-info">Endereço: <strong>${address}</strong></p>
-                    <p>Quantidade Total: ${Math.round(totalQuantity)}</p>
-                </div>`;
-                const table = `<table><thead><tr><th>Rota</th><th>VD/L</th><th>Filial</th><th>Pedido WMS</th><th>Qtd.</th></tr></thead><tbody>${tableRows}</tbody></table>`;
-                resultsContainer.innerHTML += summaryCard + table;
-            });
-
-            populateProductFilters(allRowsForFiltering);
-        }
-
-        function populateProductFilters(data) {
-            const rotaFilter = document.getElementById('productRotaFilter');
-            const filialFilter = document.getElementById('productFilialFilter');
-            rotaFilter.innerHTML = '<option value="all">Todas as Rotas</option>';
-            filialFilter.innerHTML = '<option value="all">Todas as Filiais</option>';
-
-            const rotas = new Set();
-            const filiais = new Set();
-            data.forEach(row => {
-                const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
-                const storeInfo = masterStoreList.get(codigoLoja) || { name: String(row['Nome da Loja'] || 'N/A').trim(), rota: String(row['Rota'] || 'N/A').trim() };
-                const rota = storeInfo.rota;
-                const nomeLoja = storeInfo.name;
-                
-                if(rota) rotas.add(rota);
-                if(nomeLoja) filiais.add(nomeLoja);
-            });
-
-            [...rotas].sort((a,b) => Number(a) - Number(b)).forEach(r => rotaFilter.innerHTML += `<option value="${r}">Rota ${r}</option>`);
-            [...filiais].sort().forEach(f => filialFilter.innerHTML += `<option value="${f}">${f}</option>`);
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            setupFileDropArea('fileInputArea', 'fileInput');
-            setupFileDropArea('addressFileInputArea', 'addressFileInput');
-            
-            const switchToRotaBtn = document.getElementById('switchToRota');
-            const switchToProdutoBtn = document.getElementById('switchToProduto');
-            const rotaView = document.getElementById('rota-view');
-            const produtoView = document.getElementById('produto-view');
-            const productSearchInput = document.getElementById('productSearch');
-            const suggestionsContainer = document.getElementById('product-suggestions');
-
-            switchToRotaBtn.addEventListener('click', () => {
-                rotaView.classList.remove('hidden');
-                produtoView.classList.add('hidden');
-                switchToRotaBtn.classList.add('active');
-                switchToProdutoBtn.classList.remove('active');
-            });
-
-            switchToProdutoBtn.addEventListener('click', () => {
-                rotaView.classList.add('hidden');
-                produtoView.classList.remove('hidden');
-                switchToRotaBtn.classList.remove('active');
-                switchToProdutoBtn.classList.add('active');
-            });
-            
-            document.getElementById('fileInput').addEventListener('change', handleFileSelection);
-            document.getElementById('addressFileInput').addEventListener('change', handleAddressFile);
-            
-            document.getElementById('rotaFilter').addEventListener('change', e => {
-                const selectedRota = e.target.value;
-                document.querySelectorAll('#rota-results-container .rota-block').forEach(block => {
-                    block.classList.toggle('hidden', !(selectedRota === 'all' || block.dataset.rota === selectedRota));
-                });
-            });
-
-            productSearchInput.addEventListener('input', e => {
-                const searchTerm = e.target.value.trim().toUpperCase();
-                suggestionsContainer.innerHTML = '';
-                document.getElementById('produto-results-container').innerHTML = '';
-                document.getElementById('product-analysis-content').classList.add('hidden');
-
-                if (searchTerm.length < 3) return;
-
-                const uniqueProducts = new Map();
-                fullData.forEach(row => {
-                    const itemCode = normalizeProductCode(row['Item']);
-                    const itemDescr = String(row['Descr'] || '').trim();
-                    const searchTermIsNumber = /^\d+$/.test(searchTerm);
-
-                    if (itemCode && ( (searchTermIsNumber && itemCode.includes(searchTerm)) || (!searchTermIsNumber && itemDescr.toUpperCase().includes(searchTerm)) ) ) {
-                        if (!uniqueProducts.has(itemCode)) {
-                            uniqueProducts.set(itemCode, itemDescr);
-                        }
-                    }
-                });
-
-                uniqueProducts.forEach((descr, code) => {
-                    const item = document.createElement('div');
-                    item.className = 'suggestion-item';
-                    item.innerHTML = `${descr} <small>Cód: ${code}</small>`;
-                    item.addEventListener('click', () => {
-                        productSearchInput.value = `${descr} (${code})`;
-                        suggestionsContainer.innerHTML = '';
-                        const filteredData = fullData.filter(row => normalizeProductCode(row['Item']) === code);
-                        displayProductResults(filteredData);
-                    });
-                    suggestionsContainer.appendChild(item);
-                });
-            });
-            
-            const applyProductFilters = () => {
-                const selectedRota = document.getElementById('productRotaFilter').value;
-                const selectedFilial = document.getElementById('productFilialFilter').value;
-                document.querySelectorAll('#produto-results-container table tbody tr').forEach(row => {
-                    const isVisible = (selectedRota === 'all' || row.dataset.rota === selectedRota) && 
-                                      (selectedFilial === 'all' || row.dataset.filial === selectedFilial);
-                    row.style.display = isVisible ? '' : 'none';
-                });
+            const UIElements = {
+                notification: document.getElementById('notification'),
+                loader: document.getElementById('loader'),
+                views: {
+                    rota: document.getElementById('rota-view'),
+                    produto: document.getElementById('produto-view'),
+                    setor: document.getElementById('setor-view')
+                },
+                buttons: {
+                    switchToRota: document.getElementById('switchToRota'),
+                    switchToProduto: document.getElementById('switchToProduto'),
+                    switchToSetor: document.getElementById('switchToSetor'),
+                    reloadFiles: document.getElementById('reload-files-btn')
+                },
+                fileInput: document.getElementById('fileInput'),
+                addressFileInput: document.getElementById('addressFileInput'),
+                rotaFilter: document.getElementById('rotaFilter'),
+                productSearchInput: document.getElementById('productSearch'),
+                productSuggestions: document.getElementById('product-suggestions'),
+                productRotaFilter: document.getElementById('productRotaFilter'),
+                productFilialFilter: document.getElementById('productFilialFilter'),
+                copyProductDataBtn: document.getElementById('copyProductDataBtn'),
+                containers: {
+                    rotaResults: document.getElementById('rota-results-container'),
+                    produtoResults: document.getElementById('produto-results-container'),
+                    setorResults: document.getElementById('setor-results-container'),
+                    missingStores: document.getElementById('missing-stores-container'),
+                    geralSummary: document.getElementById('geral-summary-container'),
+                    fileInputs: document.getElementById('file-inputs-container'),
+                    reloadFiles: document.getElementById('reload-files-container')
+                },
+                contentAreas: {
+                    rotaAnalysis: document.getElementById('rota-analysis-content'),
+                    productSearch: document.getElementById('product-search-content'),
+                    productAnalysis: document.getElementById('product-analysis-content')
+                },
+                fileInputArea: document.getElementById('fileInputArea'),
+                addressFileInputArea: document.getElementById('addressFileInputArea'),
             };
-            document.getElementById('productRotaFilter').addEventListener('change', applyProductFilters);
-            document.getElementById('productFilialFilter').addEventListener('change', applyProductFilters);
 
-            document.getElementById('copyProductDataBtn').addEventListener('click', () => {
-                let textToCopy = "";
-                document.querySelectorAll('#produto-results-container .summary-card').forEach((summary, index) => {
-                    textToCopy += `*${summary.querySelector('h2').textContent}*\n*${summary.querySelector('p').textContent}*\n\n`;
-                    const table = summary.nextElementSibling;
-                    if (table) {
-                        table.querySelectorAll('tbody tr').forEach(row => {
-                            if (row.style.display !== 'none') {
-                                const cells = row.querySelectorAll('td');
-                                textToCopy += `- Rota: ${cells[0].textContent} | VD/L: ${cells[1].textContent} | Filial: ${cells[2].textContent} | Qtd: ${cells[4].textContent}\n`;
-                            }
-                        });
-                    }
-                    if (index < document.querySelectorAll('#produto-results-container .summary-card').length - 1) textToCopy += `\n--------------------\n\n`;
-                });
+            let notificationTimeout;
 
+            function showNotification(message, type = 'success', duration = 3500) {
+                clearTimeout(notificationTimeout);
+                UIElements.notification.textContent = message;
+                UIElements.notification.className = 'notification';
+                UIElements.notification.classList.add(type, 'show');
+                notificationTimeout = setTimeout(() => UIElements.notification.classList.remove('show'), duration);
+            }
+
+            function normalizeProductCode(code) {
+                if (code === null || typeof code === 'undefined') return '';
+                const strCode = String(code).trim();
+                return /^\d+$/.test(strCode) ? String(parseInt(strCode, 10)) : strCode;
+            }
+
+            /**
+             * Copia um texto para a área de transferência. Utiliza o método de fallback document.execCommand
+             * que é mais robusto em ambientes restritos como iframes.
+             * @param {string} text - O texto a ser copiado.
+             * @param {string} successMessage - A mensagem a ser exibida em caso de sucesso.
+             */
+            function copyTextToClipboard(text, successMessage) {
                 const textArea = document.createElement("textarea");
-                textArea.value = textToCopy;
-                textArea.style.position = "fixed"; textArea.style.top = "-9999px"; textArea.style.left = "-9999px";
+                textArea.value = text;
+                // Torna o textarea invisível e o remove do fluxo do documento
+                textArea.style.position = "fixed";
+                textArea.style.top = "-9999px";
+                textArea.style.left = "-9999px";
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
                 try {
-                    document.execCommand('copy') ? showNotification('Dados copiados!', 'success') : showNotification('Falha ao copiar.', 'error');
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showNotification(successMessage, 'success');
+                    } else {
+                        showNotification('Falha ao copiar.', 'error');
+                    }
                 } catch (err) {
                     showNotification('Falha ao copiar.', 'error');
+                    console.error('Falha ao copiar com método de fallback', err);
                 }
                 document.body.removeChild(textArea);
-            });
+            }
 
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.search-container')) {
-                    suggestionsContainer.innerHTML = '';
+            function setupFileDropArea(dropArea, fileInput) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+                });
+                ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false));
+                ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false));
+                dropArea.addEventListener('drop', e => {
+                    fileInput.files = e.dataTransfer.files;
+                    fileInput.dispatchEvent(new Event('change'));
+                }, false);
+            }
+            
+            function processUploadedFile(file, processFn, targetSheetName = null) {
+                if (!file) return;
+                UIElements.loader.classList.remove('hidden');
+                setTimeout(() => {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { type: 'array' });
+                            const sheetName = targetSheetName ? (workbook.SheetNames.find(name => name.toLowerCase().trim() === targetSheetName.toLowerCase()) || workbook.SheetNames[0]) : workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                            processFn(jsonData);
+                        } catch (error) {
+                            console.error("Erro ao processar o arquivo:", error);
+                            showNotification('Erro ao ler a planilha.', 'error');
+                        } finally {
+                            UIElements.loader.classList.add('hidden');
+                        }
+                    };
+                    reader.onerror = () => {
+                        UIElements.loader.classList.add('hidden');
+                        showNotification('Falha ao ler o arquivo.', 'error');
+                    };
+                    reader.readAsArrayBuffer(file);
+                }, 50);
+            }
+
+            function handleOrdersFile(event) {
+                processUploadedFile(event.target.files[0], (data) => {
+                    if (data.length === 0) {
+                        showNotification('A planilha de pedidos está vazia.', 'warning');
+                        return;
+                    }
+                    appState.fullData = data;
+                    UIElements.fileInputArea.classList.add('loaded');
+                    runFullAnalysis();
+                    UIElements.contentAreas.rotaAnalysis.classList.remove('hidden');
+                    UIElements.contentAreas.productSearch.classList.remove('hidden');
+                    UIElements.containers.fileInputs.classList.add('hidden');
+                    UIElements.containers.reloadFiles.classList.remove('hidden');
+                    showNotification('Planilha de pedidos carregada!', 'success');
+                }, 'Loja Cross');
+            }
+
+            function handleAddressFile(event) {
+                processUploadedFile(event.target.files[0], (data) => {
+                    appState.productAddresses.clear();
+                    data.forEach(row => {
+                        const code = normalizeProductCode(row['Código Produto'] || row['Item']);
+                        const address = String(row['Endereço'] || '').trim();
+                        if (code && address) appState.productAddresses.set(code, address);
+                    });
+                    UIElements.addressFileInputArea.classList.add('loaded');
+                    showNotification(`${appState.productAddresses.size} endereços carregados.`, 'success');
+                    if (appState.fullData.length > 0) runFullAnalysis();
+                });
+            }
+
+            function runFullAnalysis() {
+                if (appState.fullData.length === 0) return;
+                const processedData = processData(appState.fullData);
+                displayGeralSummary(processedData.geral);
+                displayRotaResults(processedData.rotas);
+                displaySetorResults(processedData.setores);
+                populateRotaFilter(Object.keys(processedData.rotas));
+            }
+            
+            function resetAnalysis() {
+                appState.fullData = [];
+                appState.productAddresses.clear();
+
+                Object.values(UIElements.containers).forEach(container => {
+                    if(container.id !== 'file-inputs-container' && container.id !== 'reload-files-container') {
+                        container.innerHTML = '';
+                    }
+                });
+                UIElements.containers.geralSummary.classList.add('hidden');
+                
+                Object.values(UIElements.contentAreas).forEach(area => area.classList.add('hidden'));
+
+                UIElements.fileInputArea.classList.remove('loaded');
+                UIElements.addressFileInputArea.classList.remove('loaded');
+                UIElements.fileInput.value = '';
+                UIElements.addressFileInput.value = '';
+
+                UIElements.containers.fileInputs.classList.remove('hidden');
+                UIElements.containers.reloadFiles.classList.add('hidden');
+
+                UIElements.buttons.switchToRota.click();
+                showNotification('Pronto para carregar novos arquivos.', 'warning');
+            }
+
+            function processData(data) {
+                const rotasData = {};
+                const storesWithValidOrders = new Set();
+                const setoresData = {};
+                const skusGeral = new Set();
+                let unidadesGeral = 0;
+
+                for (const row of data) {
+                    const quantidade = parseFloat(row['Sum Qtd Solicitada']);
+                    const pedidoWMS = String(row['Nº Pedido WMS'] || '').trim();
+                    const itemCode = normalizeProductCode(row['Item']);
+
+                    if (isNaN(quantidade) || !pedidoWMS || quantidade <= 0 || !itemCode) continue;
+
+                    skusGeral.add(itemCode);
+                    unidadesGeral += quantidade;
+
+                    const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
+                    storesWithValidOrders.add(codigoLoja);
+                    
+                    let rotaOriginal = String(row['Rota'] || 'N/A').trim();
+                    const storeInfo = masterStoreList.get(codigoLoja);
+                    
+                    // Lógica da Rota 916
+                    if (storeInfo && rotaOriginal === '916') {
+                        rotaOriginal = storeInfo.rota;
+                    }
+                    
+                    const nomeLoja = storeInfo ? storeInfo.name : String(row['Nome da Loja'] || 'N/A').trim();
+
+                    if (!rotasData[rotaOriginal]) rotasData[rotaOriginal] = { pedidos: {} };
+                    if (!rotasData[rotaOriginal].pedidos[pedidoWMS]) {
+                        rotasData[rotaOriginal].pedidos[pedidoWMS] = { nome: nomeLoja, codigo: codigoLoja, produtos: [] };
+                    }
+                    rotasData[rotaOriginal].pedidos[pedidoWMS].produtos.push({ item: itemCode, descr: String(row['Descr'] || '').trim(), qtd: quantidade });
+                    
+                    // Processamento por Setor
+                    const address = appState.productAddresses.get(itemCode);
+                    const setor = address ? address.split('.')[0] : 'Sem Endereço';
+                    if (!setoresData[setor]) setoresData[setor] = { products: {} };
+                    if (!setoresData[setor].products[itemCode]) {
+                        setoresData[setor].products[itemCode] = { descr: String(row['Descr'] || 'N/A').trim(), address: address || 'N/A', totalQtd: 0 };
+                    }
+                    setoresData[setor].products[itemCode].totalQtd += quantidade;
                 }
-            });
-        });
+
+                const missingStoresByRota = new Map();
+                masterStoreList.forEach((info, codigo) => {
+                    if (!storesWithValidOrders.has(codigo)) {
+                        const rota = info.rota;
+                        if (!missingStoresByRota.has(rota)) {
+                            missingStoresByRota.set(rota, []);
+                        }
+                        missingStoresByRota.get(rota).push(`${info.name} (${codigo})`);
+                    }
+                });
+                displayMissingStores(missingStoresByRota);
+
+                return {
+                    geral: { totalUnidades: unidadesGeral, totalSkus: skusGeral.size },
+                    rotas: rotasData,
+                    setores: setoresData
+                };
+            }
+
+            function displayGeralSummary({ totalUnidades, totalSkus }) {
+                UIElements.containers.geralSummary.innerHTML = `
+                    <div class="geral-summary-grid">
+                        <div class="geral-summary-card">
+                            <div class="icon unidades"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div>
+                            <div class="info"><p>Total de Unidades</p><div class="value">${Math.round(totalUnidades)}</div></div>
+                        </div>
+                        <div class="geral-summary-card">
+                            <div class="icon skus"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 20v2"/><path d="M5 12H3"/><path d="M21 12h-2"/><path d="m18.36 5.64-.18-.18"/><path d="m5.82 18.18-.18-.18"/><path d="m18.18 18.18-.18.18"/><path d="m5.64 5.64-.18.18"/></svg></div>
+                            <div class="info"><p>Total de SKUs</p><div class="value">${totalSkus}</div></div>
+                        </div>
+                    </div>`;
+                UIElements.containers.geralSummary.classList.remove('hidden');
+            }
+
+            function displayMissingStores(storesByRota) {
+                const container = UIElements.containers.missingStores;
+                container.innerHTML = '';
+                if (storesByRota.size === 0) return;
+
+                const warningCard = document.createElement('div');
+                warningCard.className = 'warning-card';
+                warningCard.innerHTML = `<h2>Filiais da Lista Mestra Sem Pedidos Válidos</h2>`;
+
+                const sortedRotas = [...storesByRota.keys()].sort((a, b) => Number(a) - Number(b));
+
+                sortedRotas.forEach(rota => {
+                    const stores = storesByRota.get(rota).sort();
+                    
+                    const accordionItem = document.createElement('div');
+                    accordionItem.className = 'missing-stores-accordion-item';
+
+                    const listItems = stores.map(store => `<li>${store}</li>`).join('');
+
+                    accordionItem.innerHTML = `
+                        <div class="missing-stores-accordion-header">
+                            <span>Rota ${rota} (${stores.length} Filial/is)</span>
+                        </div>
+                        <div class="missing-stores-accordion-content">
+                            <ul>${listItems}</ul>
+                        </div>
+                    `;
+                    
+                    accordionItem.querySelector('.missing-stores-accordion-header').addEventListener('click', () => {
+                        accordionItem.classList.toggle('open');
+                    });
+
+                    warningCard.appendChild(accordionItem);
+                });
+
+                container.appendChild(warningCard);
+            }
+
+            function displayRotaResults(rotasData) {
+                const container = UIElements.containers.rotaResults;
+                container.innerHTML = "";
+                const sortedRotas = Object.keys(rotasData).sort((a, b) => Number(a) - Number(b));
+
+                if (sortedRotas.length === 0 && UIElements.containers.missingStores.innerHTML === '') {
+                    container.innerHTML = "<div class='summary-card'>Nenhum pedido válido encontrado.</div>";
+                    return;
+                }
+                
+                sortedRotas.forEach(rota => {
+                    const rotaBlock = document.createElement('div');
+                    rotaBlock.className = 'rota-block';
+                    rotaBlock.dataset.rota = rota;
+                    const rotaInfo = rotasData[rota];
+                    const totalPedidos = Object.keys(rotaInfo.pedidos).length;
+                    const totalItensGeral = Object.values(rotaInfo.pedidos).reduce((sum, p) => sum + p.produtos.reduce((s, prod) => s + prod.qtd, 0), 0);
+                    
+                    rotaBlock.innerHTML = `<h2>Rota ${rota}</h2><div class="summary-card"><h2>Resumo da Rota</h2><p>${Math.round(totalItensGeral)} Itens | ${totalPedidos} Pedido(s)</p></div>`;
+                    
+                    const table = document.createElement('table');
+                    table.innerHTML = `<thead><tr><th>VD/L</th><th>Filial</th><th>Nº Pedido WMS</th></tr></thead>`;
+                    const tbody = document.createElement('tbody');
+                    
+                    Object.keys(rotaInfo.pedidos).sort().forEach(pedido => {
+                        const loja = rotaInfo.pedidos[pedido];
+                        const mainRow = tbody.insertRow();
+                        mainRow.className = 'expandable-row';
+                        mainRow.innerHTML = `<td>${loja.codigo}</td><td>${loja.nome}</td><td>${pedido}</td>`;
+                        const detailsRow = tbody.insertRow();
+                        detailsRow.className = 'product-details-row hidden';
+                        const detailsCell = detailsRow.insertCell(0);
+                        detailsCell.colSpan = 3;
+                        
+                        let productsHtml = `<div style="padding: 1rem; background-color: #f8f9fa;"><table style="box-shadow: none;"><thead><tr><th>Item</th><th>Endereço</th><th>Descrição</th><th>Qtd.</th></tr></thead><tbody>`;
+                        loja.produtos.forEach(p => {
+                            productsHtml += `<tr><td>${p.item}</td><td>${appState.productAddresses.get(p.item) || 'N/A'}</td><td>${p.descr}</td><td>${p.qtd}</td></tr>`;
+                        });
+                        detailsCell.innerHTML = productsHtml + '</tbody></table></div>';
+                        
+                        mainRow.addEventListener('click', () => {
+                            mainRow.classList.toggle('open');
+                            detailsRow.classList.toggle('hidden');
+                        });
+                    });
+                    table.appendChild(tbody);
+                    rotaBlock.appendChild(table);
+                    container.appendChild(rotaBlock);
+                });
+            }
+
+            function displaySetorResults(setoresData) {
+                const container = UIElements.containers.setorResults;
+                container.innerHTML = '<h2>Análise por Setor de Estoque</h2>';
+                
+                Object.keys(setoresData).sort().forEach(setor => {
+                    const setorInfo = setoresData[setor];
+                    const productEntries = Object.entries(setorInfo.products);
+                    const totalSkus = productEntries.length;
+                    const totalUnidades = productEntries.reduce((sum, [, prod]) => sum + prod.totalQtd, 0);
+
+                    const top20Products = productEntries.sort(([,a], [,b]) => b.totalQtd - a.totalQtd).slice(0, 20);
+                    const top20Unidades = top20Products.reduce((sum, [, prod]) => sum + prod.totalQtd, 0);
+                    const top20Percentual = totalUnidades > 0 ? (top20Unidades / totalUnidades) * 100 : 0;
+
+                    const accordionItem = document.createElement('div');
+                    accordionItem.className = 'setor-accordion-item';
+
+                    let tableRows = '';
+                    top20Products.forEach(([code, prod]) => {
+                        tableRows += `<tr><td>${code}</td><td>${prod.descr}</td><td>${prod.address}</td><td>${Math.round(prod.totalQtd)}</td></tr>`;
+                    });
+
+                    accordionItem.innerHTML = `
+                        <div class="setor-accordion-header">
+                            <h3>Setor: ${setor}</h3>
+                            <div class="setor-summary-info">
+                                <span><strong>SKUs:</strong> ${totalSkus}</span>
+                                <span><strong>Unidades:</strong> ${Math.round(totalUnidades)}</span>
+                            </div>
+                            <button class="copy-button copy-setor-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                Copiar Top 20
+                            </button>
+                        </div>
+                        <div class="setor-accordion-content">
+                           <div class="content-wrapper">
+                                <div class="setor-top20-summary">
+                                    Soma do Top 20: <strong>${Math.round(top20Unidades)} unidades</strong> (${top20Percentual.toFixed(2)}% do total do setor)
+                                </div>
+                                <h4>Top 20 Produtos do Setor</h4>
+                                <table>
+                                    <thead><tr><th>Cód.</th><th>Descrição</th><th>Endereço</th><th>Qtd Total</th></tr></thead>
+                                    <tbody>${tableRows}</tbody>
+                                </table>
+                           </div>
+                        </div>`;
+
+                    accordionItem.querySelector('.setor-accordion-header').addEventListener('click', (e) => {
+                        if (e.target.classList.contains('copy-setor-btn') || e.target.closest('.copy-setor-btn')) return;
+                        accordionItem.classList.toggle('open');
+                    });
+                    
+                    accordionItem.querySelector('.copy-setor-btn').addEventListener('click', () => {
+                        let textToCopy = `*Top 20 - Setor: ${setor}*\n*Total SKUs: ${totalSkus} | Total Unidades: ${Math.round(totalUnidades)}*\n*Soma do Top 20: ${Math.round(top20Unidades)} unidades (${top20Percentual.toFixed(2)}% do total)*\n\n`;
+                        top20Products.forEach(([code, prod]) => {
+                           textToCopy += `- *${prod.descr}* (${code})\n  Endereço: ${prod.address} | Qtd: ${Math.round(prod.totalQtd)}\n`;
+                        });
+                        copyTextToClipboard(textToCopy, `Dados do setor ${setor} copiados!`);
+                    });
+
+                    container.appendChild(accordionItem);
+                });
+            }
+            
+            function displayProductResults(data) {
+                const container = UIElements.containers.produtoResults;
+                container.innerHTML = "";
+                UIElements.contentAreas.productAnalysis.classList.add('hidden');
+
+                const groupedByItem = data.reduce((acc, row) => {
+                    const itemCode = normalizeProductCode(row['Item']);
+                    if (!itemCode) return acc;
+                    if (!acc[itemCode]) acc[itemCode] = { descr: String(row['Descr'] || 'N/A').trim(), rows: [] };
+                    acc[itemCode].rows.push(row);
+                    return acc;
+                }, {});
+
+                if (Object.keys(groupedByItem).length === 0) {
+                    container.innerHTML = `<div class="summary-card">Nenhum resultado encontrado.</div>`;
+                    return;
+                }
+
+                UIElements.contentAreas.productAnalysis.classList.remove('hidden');
+                
+                Object.keys(groupedByItem).sort().forEach(itemCode => {
+                    const product = groupedByItem[itemCode];
+                    let totalQuantity = 0;
+                    const tableBody = document.createElement('tbody');
+
+                    product.rows.forEach(row => {
+                        const quantidade = parseFloat(row['Sum Qtd Solicitada']) || 0;
+                        totalQuantity += quantidade;
+                        const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
+                        const storeInfo = masterStoreList.get(codigoLoja) || { name: 'N/A', rota: 'N/A' };
+                        
+                        const tr = document.createElement('tr');
+                        tr.dataset.rota = storeInfo.rota;
+                        tr.dataset.filial = storeInfo.name;
+                        tr.innerHTML = `<td>${storeInfo.rota}</td><td>${codigoLoja}</td><td>${storeInfo.name}</td><td>${row['Nº Pedido WMS'] || ''}</td><td>${quantidade}</td>`;
+                        tableBody.appendChild(tr);
+                    });
+
+                    const address = appState.productAddresses.get(itemCode) || 'N/A';
+                    const resultBlock = document.createElement('div');
+                    resultBlock.innerHTML = `
+                        <div class="summary-card">
+                            <h2>${product.descr} (Cód: ${itemCode})</h2>
+                            <p class="address-info">Endereço: <strong>${address}</strong></p>
+                            <p>Quantidade Total: ${Math.round(totalQuantity)}</p>
+                        </div>
+                        <table>
+                            <thead><tr><th>Rota</th><th>VD/L</th><th>Filial</th><th>Pedido WMS</th><th>Qtd.</th></tr></thead>
+                        </table>`;
+                    resultBlock.querySelector('table').appendChild(tableBody);
+                    container.appendChild(resultBlock);
+                });
+                populateProductFilters(data);
+            }
+
+            function populateProductFilters(data) {
+                const { productRotaFilter, productFilialFilter } = UIElements;
+                productRotaFilter.innerHTML = '<option value="all">Todas as Rotas</option>';
+                productFilialFilter.innerHTML = '<option value="all">Todas as Filiais</option>';
+                const rotas = new Set();
+                const filiais = new Set();
+
+                data.forEach(row => {
+                    const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
+                    const storeInfo = masterStoreList.get(codigoLoja);
+                    if (storeInfo) {
+                        if (storeInfo.rota) rotas.add(storeInfo.rota);
+                        if (storeInfo.name) filiais.add(storeInfo.name);
+                    }
+                });
+                
+                [...rotas].sort((a, b) => Number(a) - Number(b)).forEach(r => productRotaFilter.innerHTML += `<option value="${r}">Rota ${r}</option>`);
+                [...filiais].sort().forEach(f => productFilialFilter.innerHTML += `<option value="${f}">${f}</option>`);
+            }
+            
+            function populateRotaFilter(rotas) {
+                UIElements.rotaFilter.innerHTML = '<option value="all">Mostrar Todas as Rotas</option>';
+                if (rotas.length > 0) {
+                    rotas.sort((a, b) => Number(a) - Number(b)).forEach(rota => {
+                        UIElements.rotaFilter.innerHTML += `<option value="${rota}">Rota ${rota}</option>`;
+                    });
+                }
+            }
+
+            function initializeEventListeners() {
+                setupFileDropArea(UIElements.fileInputArea, UIElements.fileInput);
+                setupFileDropArea(UIElements.addressFileInputArea, UIElements.addressFileInput);
+
+                const switchView = (activeView) => {
+                    Object.values(UIElements.views).forEach(view => view.classList.add('hidden'));
+                    Object.values(UIElements.buttons).forEach(btn => btn.classList.remove('active'));
+                    UIElements.views[activeView].classList.remove('hidden');
+                    UIElements.buttons[`switchTo${activeView.charAt(0).toUpperCase() + activeView.slice(1)}`].classList.add('active');
+                };
+
+                UIElements.buttons.switchToRota.addEventListener('click', () => switchView('rota'));
+                UIElements.buttons.switchToProduto.addEventListener('click', () => switchView('produto'));
+                UIElements.buttons.switchToSetor.addEventListener('click', () => switchView('setor'));
+                UIElements.buttons.reloadFiles.addEventListener('click', resetAnalysis);
+                
+                UIElements.fileInput.addEventListener('change', handleOrdersFile);
+                UIElements.addressFileInput.addEventListener('change', handleAddressFile);
+
+                UIElements.rotaFilter.addEventListener('change', e => {
+                    const selectedRota = e.target.value;
+                    document.querySelectorAll('#rota-results-container .rota-block').forEach(block => {
+                        block.classList.toggle('hidden', !(selectedRota === 'all' || block.dataset.rota === selectedRota));
+                    });
+                });
+
+                UIElements.productSearchInput.addEventListener('input', e => {
+                    const searchTerm = e.target.value.trim().toUpperCase();
+                    UIElements.productSuggestions.innerHTML = '';
+                    UIElements.containers.produtoResults.innerHTML = '';
+                    UIElements.contentAreas.productAnalysis.classList.add('hidden');
+                    if (searchTerm.length < 3) return;
+
+                    const uniqueProducts = new Map();
+                    const searchTermIsNumber = /^\d+$/.test(searchTerm);
+
+                    appState.fullData.forEach(row => {
+                        const itemCode = normalizeProductCode(row['Item']);
+                        const itemDescr = String(row['Descr'] || '').trim().toUpperCase();
+                        if (itemCode && ((searchTermIsNumber && itemCode.includes(searchTerm)) || (!searchTermIsNumber && itemDescr.includes(searchTerm)))) {
+                            if (!uniqueProducts.has(itemCode)) uniqueProducts.set(itemCode, String(row['Descr'] || '').trim());
+                        }
+                    });
+
+                    uniqueProducts.forEach((descr, code) => {
+                        const item = document.createElement('div');
+                        item.className = 'suggestion-item';
+                        item.innerHTML = `${descr} <small>Cód: ${code}</small>`;
+                        item.addEventListener('click', () => {
+                            UIElements.productSearchInput.value = `${descr} (${code})`;
+                            UIElements.productSuggestions.innerHTML = '';
+                            const filteredData = appState.fullData.filter(row => normalizeProductCode(row['Item']) === code);
+                            displayProductResults(filteredData);
+                        });
+                        UIElements.productSuggestions.appendChild(item);
+                    });
+                });
+                
+                const applyProductFilters = () => {
+                    const selectedRota = UIElements.productRotaFilter.value;
+                    const selectedFilial = UIElements.productFilialFilter.value;
+                    document.querySelectorAll('#produto-results-container table tbody tr').forEach(row => {
+                        row.style.display = (selectedRota === 'all' || row.dataset.rota === selectedRota) && (selectedFilial === 'all' || row.dataset.filial === selectedFilial) ? '' : 'none';
+                    });
+                };
+                UIElements.productRotaFilter.addEventListener('change', applyProductFilters);
+                UIElements.productFilialFilter.addEventListener('change', applyProductFilters);
+
+                UIElements.copyProductDataBtn.addEventListener('click', () => {
+                    let textToCopy = "";
+                    document.querySelectorAll('#produto-results-container .summary-card').forEach((summary) => {
+                        textToCopy += `*${summary.querySelector('h2').textContent.trim()}*\n*${summary.querySelector('.address-info').textContent.trim()}*\n\n`;
+                        const table = summary.nextElementSibling;
+                        if (table) {
+                            table.querySelectorAll('tbody tr').forEach(row => {
+                                if (row.style.display !== 'none') {
+                                    const cells = row.querySelectorAll('td');
+                                    textToCopy += `- Rota: ${cells[0].textContent} | VD/L: ${cells[1].textContent} | Filial: ${cells[2].textContent} | Qtd: ${cells[4].textContent}\n`;
+                                }
+                            });
+                        }
+                        textToCopy += `\n--------------------\n\n`;
+                    });
+                    copyTextToClipboard(textToCopy.trim(), 'Dados copiados!');
+                });
+
+                document.addEventListener('click', e => {
+                    if (!e.target.closest('.search-container')) UIElements.productSuggestions.innerHTML = '';
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', initializeEventListeners);
+
+        })();
     </script>
 </body>
 </html>
+
