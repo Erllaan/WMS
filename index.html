@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Análise WMS - Pro</title>
+    <title>Dashboard WMS Multifuncional</title>
     <!-- Biblioteca para ler arquivos Excel (XLSX) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- NOVA BIBLIOTECA: Para converter HTML em imagem -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
@@ -13,10 +15,10 @@
             --primary-color: #0d6efd;
             --primary-light: #e7f1ff;
             --secondary-color: #6c757d;
+            --sector-primary: #6f42c1;
+            --sector-light: #f1ecf9;
             --product-primary: #fd7e14;
             --product-light: #fff2e7;
-            --setor-primary: #198754;
-            --setor-light: #e8f3ee;
             --success-color: #198754;
             --warning-color: #ffc107;
             --warning-light: #fffcf1;
@@ -27,7 +29,7 @@
             --text-color: #343a40;
             --text-light: #6c757d;
             --border-color: #dee2e6;
-            --shadow: 0 4px_20px rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             --border-radius: 0.75rem;
         }
 
@@ -54,8 +56,8 @@
         }
 
         h2 {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-light);
+            border-bottom-width: 2px;
+            border-bottom-style: solid;
             padding-bottom: 0.75rem;
             margin-top: 2.5rem;
             margin-bottom: 1.5rem;
@@ -63,10 +65,11 @@
             font-weight: 600;
         }
 
-        #produto-view h2 { color: var(--product-primary); border-bottom-color: var(--product-light); }
-        #setor-view h2 { color: var(--setor-primary); border-bottom-color: var(--setor-light); }
-        
-        .file-inputs-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        #validation-view h2 { color: var(--primary-color); border-bottom-color: var(--primary-light); }
+        #sector-view h2 { color: var(--sector-primary); border-bottom-color: var(--sector-light); }
+        #product-view h2 { color: var(--product-primary); border-bottom-color: var(--product-light); }
+
+        .file-inputs-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
         .file-drop-area { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--border-color); padding: 1.5rem; border-radius: var(--border-radius); width: 100%; box-sizing: border-box; background-color: #fcfdff; cursor: pointer; transition: border-color 0.3s, background-color 0.3s; text-align: center; height: 100%; }
         .file-drop-area.dragover { border-color: var(--primary-color); background-color: var(--primary-light); }
         .file-drop-area p { margin: 0.5rem 0 0; color: var(--text-light); font-weight: 500; }
@@ -76,8 +79,9 @@
         .reload-files-container {
             display: flex;
             justify-content: center;
-            margin-bottom: 2rem;
-            padding-top: 1rem;
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
         }
         #reload-files-btn {
             padding: 0.75rem 1.5rem;
@@ -113,31 +117,26 @@
         .view-switcher { display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; }
         .view-switcher button { padding: 0.75rem 1.5rem; font-size: 1em; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--text-light); border-bottom: 3px solid transparent; transition: color 0.2s, border-bottom-color 0.2s; display: flex; align-items: center; gap: 8px; }
         .view-switcher button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-        #produto-view .view-switcher button.active { color: var(--product-primary); border-bottom-color: var(--product-primary); }
-        #setor-view .view-switcher button.active { color: var(--setor-primary); border-bottom-color: var(--setor-primary); }
-
-        .expandable-row { cursor: pointer; transition: background-color 0.2s; }
-        .expandable-row td:first-child::before { content: '▶'; display: inline-block; margin-right: 10px; font-size: 0.8em; transition: transform 0.2s; }
-        .expandable-row.open td:first-child::before { transform: rotate(90deg); }
+        #sector-view .view-switcher button.active { color: var(--sector-primary); border-bottom-color: var(--sector-primary); }
+        #product-view .view-switcher button.active { color: var(--product-primary); border-bottom-color: var(--product-primary); }
 
         .summary-card { padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; border-left: 5px solid; box-shadow: var(--shadow); }
-        #rota-view .summary-card { background-color: var(--primary-light); border-color: var(--primary-color); color: var(--primary-color); }
-        #produto-view .summary-card { background-color: var(--product-light); border-color: var(--product-primary); color: var(--product-primary); }
+        #validation-view .summary-card { background-color: var(--primary-light); border-color: var(--primary-color); color: var(--primary-color); }
+        #sector-view .summary-card { background-color: var(--sector-light); border-color: var(--sector-primary); color: var(--sector-primary); }
+        #product-view .summary-card { background-color: var(--product-light); border-color: var(--product-primary); color: var(--product-primary); }
+        
         .summary-card h2 { margin-top: 0; font-size: 1.2em; background: none; box-shadow: none; padding: 0; color: inherit; border: none; font-weight: 500; }
         .summary-card p { font-size: 1.5em; font-weight: 700; margin: 0.5rem 0 0; }
         .summary-card .address-info { font-size: 1em; font-weight: 500; opacity: 0.9; }
 
         .geral-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
-        .geral-summary-card { background-color: var(--card-background); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.5rem; border: 1px solid var(--border-color);}
+        .geral-summary-card { background-color: var(--card-background); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.5rem; border: 1px solid #e9ecef;}
         .geral-summary-card .icon { font-size: 2.5em; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
         .geral-summary-card .icon.unidades { background-color: var(--primary-light); color: var(--primary-color); }
         .geral-summary-card .icon.skus { background-color: var(--product-light); color: var(--product-primary); }
+        .geral-summary-card .icon.sector { background-color: var(--sector-light); color: var(--sector-primary); }
         .geral-summary-card .info p { margin: 0; font-size: 1em; color: var(--text-light); }
         .geral-summary-card .info .value { font-size: 1.75em; font-weight: 700; color: var(--text-color); }
-
-        .copy-button { padding: 0.5rem 1rem; font-size: 0.9em; font-weight: 500; border: 1px solid var(--border-color); background-color: #fff; color: var(--secondary-color); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; margin-left: auto; display: flex; align-items: center; gap: 6px; }
-        .copy-button:hover { background-color: var(--secondary-color); color: #fff; border-color: var(--secondary-color); }
-        #product-filters .copy-button { padding: 0.75rem 1.5rem; font-size: 1em; font-weight: 600; }
 
         .loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; font-size: 1.5em; font-weight: 600; color: var(--primary-color); backdrop-filter: blur(4px); }
         .loader-spinner { border: 4px solid var(--primary-light); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
@@ -149,83 +148,253 @@
         .notification.error { background-color: var(--error-color); }
         .notification.warning { background-color: var(--warning-color); color: var(--text-color); }
 
-        .suggestions-container { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 var(--border-radius) var(--border-radius); box-shadow: var(--shadow); max-height: 300px; overflow-y: auto; z-index: 100; }
-        .suggestion-item { padding: 0.75rem 1.5rem; cursor: pointer; transition: background-color 0.2s; }
-        .suggestion-item:hover { background-color: var(--primary-light); }
-        .suggestion-item small { color: var(--text-light); display: block; }
-        
-        .warning-card { padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; border-left: 5px solid var(--warning-color); background-color: var(--warning-light); color: var(--warning-dark); }
-        .warning-card h2 { color: var(--warning-dark); margin-top: 0; font-size: 1.2em; border: none; padding: 0; }
-        .warning-card ul { list-style-type: none; padding-left: 0; margin: 0.5rem 0 0; columns: 3; -webkit-columns: 3; -moz-columns: 3; }
-        
-        /* Estilos para Acordeão de Lojas Faltantes */
-        .missing-stores-accordion-item {
-            border: 1px solid #ffe69c;
+        .placeholder-card {
+            background-color: var(--background-color);
+            border: 2px dashed var(--border-color);
             border-radius: var(--border-radius);
-            margin-top: 0.75rem;
-            overflow: hidden;
+            padding: 2.5rem;
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-light);
+        }
+        .placeholder-card p { margin: 0; font-weight: 500; font-size: 1.1em; }
+        .placeholder-card strong { color: var(--text-color); }
+        
+        #file-control-panel {
             background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            overflow: hidden;
         }
-        .missing-stores-accordion-header {
+        #file-control-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1.25rem;
-            background-color: var(--warning-light);
+            padding: 1rem 1.5rem;
             cursor: pointer;
+            background-color: #f8f9fa;
             transition: background-color 0.2s;
-            font-weight: 600;
-            color: var(--warning-dark);
         }
-        .missing-stores-accordion-header:hover {
-            background-color: #fff3cd;
+        #file-control-header:hover {
+            background-color: #f1f3f5;
         }
-        .missing-stores-accordion-header::before {
-            content: '▶';
-            display: inline-block;
-            font-size: 0.8em;
-            margin-right: 10px;
+        #file-control-header h3 {
+            margin: 0;
+            font-size: 1.25em;
+            color: var(--text-color);
+        }
+        #file-control-header .toggle-icon {
+            font-size: 1.2em;
             transition: transform 0.3s ease;
         }
-        .missing-stores-accordion-item.open .missing-stores-accordion-header::before {
-            transform: rotate(90deg);
+        #file-control-panel.open #file-control-header .toggle-icon {
+            transform: rotate(180deg);
         }
-        .missing-stores-accordion-content {
+        #file-control-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            padding: 0 1.5rem;
+        }
+        #file-control-panel.open #file-control-content {
+            max-height: 800px; /* Aumentado */
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        #file-control-content h4 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #file-control-content h4:not(:first-child) {
+            margin-top: 1.5rem;
+        }
+
+        /* INÍCIO: NOVOS ESTILOS PARA O ACCORDION DE ROTAS */
+        .rota-accordion-item {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            background-color: var(--card-background);
+            box-shadow: var(--shadow);
+        }
+        .rota-accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid transparent;
+        }
+        .rota-accordion-item.open .rota-accordion-header {
+            border-bottom-color: var(--border-color);
+        }
+        .rota-accordion-header:hover {
+            background-color: #e9ecef;
+        }
+        .rota-accordion-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: var(--primary-color);
+            border: none;
+            padding: 0;
+        }
+        .rota-accordion-header .rota-summary-info {
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 1.1em;
+            text-align: right;
+        }
+         .rota-accordion-header .rota-summary-info span {
+            margin-left: 1rem;
+         }
+        .rota-accordion-header .toggle-icon-rota {
+            font-size: 1.4em;
+            transition: transform 0.3s ease;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .rota-accordion-item:not(.open) .rota-accordion-header .toggle-icon-rota {
+            transform: rotate(-90deg);
+        }
+        .rota-accordion-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.4s ease-out;
         }
-        .missing-stores-accordion-item.open .missing-stores-accordion-content {
-            max-height: 500px;
-            overflow-y: auto;
+        .rota-accordion-item.open .rota-accordion-content {
+            max-height: 2000px; /* Aumentado para comportar tabelas grandes */
+            transition: max-height 0.6s ease-in;
         }
-        .missing-stores-accordion-content ul {
-            padding: 0.75rem 1.25rem 1.25rem;
+        .rota-accordion-content .content-wrapper {
+            padding: 1.5rem;
+        }
+        /* FIM: NOVOS ESTILOS */
+
+        /* INÍCIO: NOVOS ESTILOS PARA ANÁLISE DE SETOR (TABELA ÚNICA) */
+        #sector-analysis-table {
+            border: 1px solid var(--border-color);
+        }
+        #sector-analysis-table th {
+            color: var(--sector-primary);
+            font-size: 0.9em;
+        }
+        #sector-analysis-table td, #sector-analysis-table th {
+            padding: 0.85rem 1.25rem;
+        }
+        #sector-analysis-table tbody tr:nth-child(even) {
+            background-color: var(--background-color);
+        }
+        #sector-analysis-table tfoot tr {
+            background-color: var(--sector-light);
+            border-top: 2px solid var(--sector-primary);
+        }
+        #sector-analysis-table tfoot td {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: var(--sector-primary);
+        }
+        #sector-analysis-table .col-setor {
+            font-weight: 600;
+            width: 35%;
+        }
+        #sector-analysis-table .col-unidades,
+        #sector-analysis-table .col-skus,
+        #sector-analysis-table .col-percent {
+            text-align: right;
+            font-weight: 500;
+            width: 20%;
+        }
+        /* INÍCIO: NOVOS ESTILOS PARA CORES DE AMEAÇA E BOTÃO DE CÓPIA */
+        #sector-analysis-table .threat-high {
+            background-color: #f8d7da !important; /* Vermelho claro */
+            color: #721c24;
+        }
+        #sector-analysis-table .threat-medium {
+            background-color: #fff3cd !important; /* Amarelo claro */
+            color: #856404;
+        }
+         #sector-analysis-table .threat-low {
+            /* Sem cor específica, mantém o padrão */
+        }
+        .copy-image-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.6rem 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--sector-primary);
+            background-color: var(--sector-primary);
+            color: #fff;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .copy-image-btn:hover {
+            opacity: 0.85;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        /* FIM: NOVOS ESTILOS */
+
+        /* INÍCIO: NOVOS ESTILOS PARA TABELAS DE FILIAIS POR SETOR */
+        .sector-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        .sector-detail-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .sector-detail-card h3 {
             margin: 0;
-            columns: 2;
-            -webkit-columns: 2;
-            -moz-columns: 2;
+            padding: 1rem 1.5rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.2em;
+            color: var(--text-color);
         }
-        .missing-stores-accordion-content li {
-            padding: 0.25rem 0;
+        .sector-detail-card .table-wrapper {
+            overflow-y: auto;
+            max-height: 400px; /* Limita a altura e adiciona scroll */
+            flex-grow: 1;
         }
-
-        /* Estilos para Análise por Setor (Accordion) */
-        .setor-accordion-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 1rem; overflow: hidden; }
-        .setor-accordion-header { display: flex; align-items: center; padding: 1rem 1.5rem; background-color: #f8f9fa; cursor: pointer; transition: background-color 0.2s; }
-        .setor-accordion-header:hover { background-color: #f1f3f5; }
-        .setor-accordion-header h3 { margin: 0; font-size: 1.25em; font-weight: 600; color: var(--setor-primary); flex-grow: 1; display: flex; align-items: center; gap: 10px;}
-        .setor-accordion-header h3::before { content: '▶'; display: inline-block; font-size: 0.8em; transition: transform 0.3s ease; }
-        .setor-accordion-item.open .setor-accordion-header h3::before { transform: rotate(90deg); }
-        .setor-summary-info { display: flex; gap: 1.5rem; font-size: 0.9em; font-weight: 500; color: var(--text-light); }
-        .setor-accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; background: #fff; }
-        .setor-accordion-item.open .setor-accordion-content { max-height: 2000px; /* Valor alto para permitir expansão */ }
-        .setor-accordion-content .content-wrapper { padding: 1.5rem; }
-        .setor-accordion-content table { box-shadow: none; margin-bottom: 0; }
-        .setor-top20-summary { background-color: var(--setor-light); color: var(--setor-primary); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; font-weight: 500; text-align: center; border: 1px solid #a3cfbb; font-size: 1.05em; }
-        .setor-top20-summary strong { font-weight: 700; }
-
-        @media (max-width: 992px) { .warning-card ul { columns: 2; -webkit-columns: 2; -moz-columns: 2; } }
-        @media (max-width: 768px) { .warning-card ul { columns: 1; -webkit-columns: 1; -moz-columns: 1; } .file-inputs-container { grid-template-columns: 1fr; } .geral-summary-grid { grid-template-columns: 1fr; } }
+        .sector-detail-card table {
+            margin-bottom: 0;
+            box-shadow: none;
+            border-radius: 0;
+        }
+        .sector-detail-card table th, .sector-detail-card table td {
+            padding: 0.75rem 1rem;
+            font-size: 0.9em;
+        }
+        .sector-detail-card table td:nth-child(2),
+        .sector-detail-card table td:nth-child(3) {
+            text-align: right;
+        }
+        .sector-detail-card table tfoot {
+            position: sticky;
+            bottom: 0;
+        }
+        /* FIM: NOVOS ESTILOS */
+        .text-right {
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -235,132 +404,148 @@
         <div id="loader" class="loader-overlay hidden"><div class="loader-spinner"></div>A processar...</div>
 
         <div class="view-switcher">
-            <button id="switchToRota" class="active">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18.5a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 3 0v12.5zM12 12.5a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 3 0v6.5zM6 6.5a1.5 1.5 0 0 1-3 0V6a1.5 1.5 0 0 1 3 0v.5z"/></svg>
-                Análise por Rota
+            <button id="switchToValidation" class="active">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                Validação de Pedidos
             </button>
-            <button id="switchToProduto">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-                Análise por Produto
-            </button>
-            <button id="switchToSetor">
+            <button id="switchToSector">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7h-4a3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3h4a7 7 0 0 0-7-7v4a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3v4Z"/><path d="M22 12a7 7 0 0 0-7-7v4a3 3 0 0 1 3 3h4Z"/><path d="M2 12a7 7 0 0 0 7 7v-4a3 3 0 0 1-3-3H2Z"/><path d="M12 2a7 7 0 0 0-7 7h4a3 3 0 0 1 3-3V2Z"/></svg>
                 Análise por Setor
             </button>
+            <button id="switchToProduct">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                Acompanhamento de Produtos
+            </button>
         </div>
 
-        <div id="geral-summary-container" class="hidden"></div>
+        <div id="file-control-panel" class="open">
+            <div id="file-control-header">
+                <h3>Painel de Ficheiros</h3>
+                <span class="toggle-icon">▲</span>
+            </div>
+            <div id="file-control-content">
+                <h4>Ficheiros para Validação e Acompanhamento</h4>
+                <div class="file-inputs-container">
+                    <label for="ordersFileInput" id="ordersFileInputArea" class="file-drop-area">
+                        <input type="file" id="ordersFileInput" accept=".csv, .xls, .xlsx">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color);"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+                        <p><strong>Planilha de Pedidos</strong><br>(Resumo WMS Rx ou com Itens)</p>
+                    </label>
+                    <label for="statusFileInput" id="statusFileInputArea" class="file-drop-area">
+                        <input type="file" id="statusFileInput" accept=".csv, .xls, .xlsx">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning-dark);"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <p><strong>Status de Pedidos (Retorno)</strong><br>(Obrigatório para Validação)</p>
+                    </label>
+                </div>
+                <h4>Ficheiros para Análises Gerais</h4>
+                <div class="file-inputs-container">
+                     <label for="sectorFileInput" id="sectorFileInputArea" class="file-drop-area">
+                        <input type="file" id="sectorFileInput" accept=".csv, .xls, .xlsx">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--sector-primary);"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                        <p><strong>Planilha de Itens (com Quantidade)</strong><br>(Obrigatório para Análises)</p>
+                    </label>
+                    <label for="addressFileInput" id="addressFileInputArea" class="file-drop-area">
+                        <input type="file" id="addressFileInput" accept=".csv, .xls, .xlsx">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--secondary-color);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <p><strong>Planilha de Endereços</strong><br>(Para análise de Setor e Posição)</p>
+                    </label>
+                    <label for="productMasterFileInput" id="productMasterFileInputArea" class="file-drop-area">
+                        <input type="file" id="productMasterFileInput" accept=".csv, .xls, .xlsx">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--product-primary);"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h5"/></svg>
+                        <p><strong>Cadastro de Produtos (com QMS)</strong><br>(Para cálculo de Caixas)</p>
+                    </label>
+                </div>
+            </div>
+        </div>
 
-        <div id="file-inputs-container" class="file-inputs-container">
-            <label for="fileInput" id="fileInputArea" class="file-drop-area">
-                <input type="file" id="fileInput" accept=".csv, .xls, .xlsx">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color);"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
-                <p><strong>1. Planilha de Pedidos</strong><br>Arraste e solte ou clique</p>
-            </label>
-            <label for="addressFileInput" id="addressFileInputArea" class="file-drop-area">
-                <input type="file" id="addressFileInput" accept=".csv, .xls, .xlsx">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--secondary-color);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                <p><strong>2. Planilha de Endereços</strong><br>Arraste e solte ou clique</p>
-            </label>
+        <!-- ABA 1: VALIDAÇÃO DE PEDIDOS -->
+        <div id="validation-view">
+            <div id="validation-summary-container"></div>
+            <div id="validation-results-container"></div>
+        </div>
+
+        <!-- ABA 2: ANÁLISE POR SETOR -->
+        <div id="sector-view" class="hidden">
+             <div id="sector-summary-container"></div>
+             <div id="sector-results-container"></div>
+        </div>
+
+        <!-- ABA 3: ACOMPANHAMENTO DE PRODUTOS -->
+        <div id="product-view" class="hidden">
+            <div id="product-analysis-container">
+                 <div class="placeholder-card"><p>Carregue a <strong>Planilha de Itens</strong> para ver o ranking de SKUs.</p></div>
+            </div>
         </div>
         
         <div id="reload-files-container" class="reload-files-container hidden">
             <button id="reload-files-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 7.24 4.12M3.51 15A9 9 0 0 0 16.76 19.88"></path></svg>
-                Carregar Novos Arquivos
+                Limpar e Recomeçar
             </button>
         </div>
-
-
-        <!-- Visualização por Rota -->
-        <div id="rota-view">
-            <div id="rota-analysis-content" class="hidden">
-                 <div class="filter-container">
-                    <label for="rotaFilter">Filtrar por Rota:</label><select id="rotaFilter"></select>
-                </div>
-                <div id="missing-stores-container"></div>
-            </div>
-            <div id="rota-results-container"></div>
-        </div>
-
-        <!-- Visualização por Produto -->
-        <div id="produto-view" class="hidden">
-            <div id="product-search-content" class="hidden">
-                <div class="search-container">
-                    <input type="text" id="productSearch" placeholder="Digite o nome ou código do produto (ex: DORFLEX ou 1341)">
-                    <div id="product-suggestions" class="suggestions-container"></div>
-                </div>
-                <div id="product-analysis-content" class="hidden">
-                    <div id="product-filters" class="filter-container">
-                        <label for="productRotaFilter">Rota:</label><select id="productRotaFilter"></select>
-                        <label for="productFilialFilter">Filial:</label><select id="productFilialFilter"></select>
-                        <button id="copyProductDataBtn" class="copy-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copiar Dados
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div id="produto-results-container"></div>
-        </div>
-        
-        <!-- Visualização por Setor -->
-        <div id="setor-view" class="hidden">
-            <div id="setor-results-container"></div>
-        </div>
-
     </div>
 
     <script>
-        // IIFE para encapsular o código e evitar poluição do escopo global
+        // IIFE para encapsular o código
         (function() {
-            const masterStoreList = new Map([
-                ['VD825', { name: 'DSP JEQUIE', rota: '6' }], ['VD992', { name: 'DSP VITORIA DA CONQUISTA', rota: '6' }], ['L2437', { name: 'DSP VITORIA DA CONQUISTA II', rota: '6' }], ['L2527', { name: 'DSP VITORIA DA CONQUISTA JURACY', rota: '6' }], ['VD863', { name: 'DSP BARREIRAS', rota: '6' }], ['VD862', { name: 'DSP LUIS EDUARDO MAGALHAES', rota: '6' }], ['L2554', { name: 'DSP ITABUNA III', rota: '6' }], ['L2290', { name: 'DSP LUIS EDUARDO MAGALHAES II', rota: '6' }], ['L2291', { name: 'DSP SANTO ANTONIO DE JESUS', rota: '6' }], ['L2412', { name: 'DSP ILHEUS', rota: '6' }], ['L2662', { name: 'DSP SHOPPING BOULEVARD', rota: '7' }], ['L2127', { name: 'DSP FEIRA DE SANTANA IV', rota: '7' }], ['VD390', { name: 'DSP FEIRA DE SANTANA', rota: '7' }], ['L2116', { name: 'DSP FEIRA DE SANTANA III', rota: '7' }], ['VD630', { name: 'DSP DIAS DAVILA', rota: '7' }], ['VD552', { name: 'DSP CAMACARI', rota: '7' }], ['L2531', { name: 'DSP GUARAJUBA', rota: '7' }], ['L2204', { name: 'DSP SHOPPING CENTER LAPA', rota: '8' }], ['L2538', { name: 'DSP SALVADOR 1', rota: '8' }], ['L2052', { name: 'DSP METRO SALVADOR', rota: '8' }], ['L2283', { name: 'DSP SHOPPING VITORIA BOULEVARD', rota: '8' }], ['L2161', { name: 'DSP CANELA II', rota: '8' }], ['VD395', { name: 'DSP CANELA', rota: '8' }], ['L2064', { name: 'DSP SALVADOR CHAME CHAME', rota: '8' }], ['L2173', { name: 'DSP PARQUE SHOPPING BAHIA', rota: '9' }], ['L2119', { name: 'DSP ESTRADA DO COCO', rota: '9' }], ['L2363', { name: 'DSP VILAS DO ATLANTICO I', rota: '9' }], ['L2668', { name: 'DSP ALPHAVILLE LITORAL NORTE', rota: '9' }], ['VD547', { name: 'DSP ITAPUA', rota: '9' }], ['VD458', { name: 'DSP ITAPUA II', rota: '9' }], ['VD744', { name: 'DSP PIATA', rota: '9' }], ['VD737', { name: 'DSP PATAMARES', rota: '9' }], ['VD546', { name: 'DSP JORGE AMADO', rota: '9' }], ['L2003', { name: 'DSP TROBOGY', rota: '10' }], ['VD834', { name: 'DSP SAO RAFAEL', rota: '10' }], ['L2174', { name: 'DSP SHOPPING PARALELA', rota: '10' }], ['VD845', { name: 'DSP CAJAZEIRAS', rota: '10' }], ['L2221', { name: 'DSP PERIPERI', rota: '10' }], ['VD643', { name: 'DSP SIMOES FILHO', rota: '10' }], ['VD620', { name: 'DSP CANDEIAS', rota: '10' }], ['L2077', { name: 'DSP SHOPPING BELLA VISTA', rota: '11' }], ['L2211', { name: 'DSP PERNAMBUES', rota: '11' }], ['VD544', { name: 'DSP MATATU', rota: '11' }], ['VD929', { name: 'DSP ACUPE DE BROTAS', rota: '11' }], ['L2631', { name: 'DSP BROTAS III', rota: '11' }], ['VD399', { name: 'DSP NOVA BROTAS', rota: '11' }], ['VD981', { name: 'DSP VASCO DA GAMA', rota: '11' }], ['L2277', { name: 'DSP FEDERACAO SALVADOR', rota: '11' }], ['VD397', { name: 'DSP ONDINA', rota: '11' }], ['L2243', { name: 'DSP SHOPPING BARRA SALVADOR', rota: '12' }], ['L2088', { name: 'DSP RIO VERMELHO II', rota: '12' }], ['VD432', { name: 'DSP PITUBA III', rota: '12' }], ['L2056', { name: 'DSP PITUBA IV', rota: '12' }], ['VD890', { name: 'DSP CAMINHO DAS ARVORES II', rota: '12' }], ['VD712', { name: 'DSP ANITA GARIBALDI', rota: '12' }], ['VD398', { name: 'DSP MIGUEL CALMON', rota: '12' }], ['L2191', { name: 'DSP MARES', rota: '12' }], ['VD697', { name: 'DSP IMBUI', rota: '13' }], ['VD550', { name: 'DSP COSTA AZUL', rota: '13' }], ['L2123', { name: 'DSP COSTA AZUL II', rota: '13' }], ['VD936', { name: 'DSP STIEP', rota: '13' }], ['VD393', { name: 'DSP CABULA', rota: '13' }], ['VD821', { name: 'DSP SALVADOR III', rota: '13' }], ['VD530', { name: 'DSP LAURO DE FREITAS', rota: '14' }], ['VD558', { name: 'DSP STELLA MARIS', rota: '14' }], ['VD926', { name: 'DSP CABULA II', rota: '15' }], ['L2169', { name: 'DSP CANDEAL', rota: '15' }], ['L2093', { name: 'DSP SHOPPING DA BAHIA 3 PISO', rota: '15' }], ['L2092', { name: 'DSP SHOPPING DA BAHIA 2 PISO', rota: '15' }], ['L2091', { name: 'DSP SHOPPING DA BAHIA 1 PISO', rota: '15' }], ['VD713', { name: 'DSP LARGO DO TAMARINEIRO', rota: '16' }], ['VD970', { name: 'DSP CAMINHO DE AREIA', rota: '16' }], ['VD604', { name: 'DSP GRACA', rota: '16' }], ['VD220', { name: 'DSP PITUBA', rota: '16' }], ['VD434', { name: 'DSP ALTO DO ITAIGARA', rota: '16' }], ['VD568', { name: 'DSP CAMINHO DAS ARVORES', rota: '16' }], ['VD913', { name: 'DSP CAMINHO DAS ARVORES III', rota: '20' }], ['VD435', { name: 'DSP SHOPPING SALVADOR', rota: '20' }], ['L2280', { name: 'DSP ALPHAVILLE SALVADOR', rota: '20' }], ['L2507', { name: 'DSP SHOPPING PATTEO OLINDA', rota: '1' }], ['L2526', { name: 'DSP SHOPPING CARUARU', rota: '1' }], ['L2438', { name: 'DSP CARUARU II', rota: '1' }], ['L2384', { name: 'DSP VITORIA DE SANTO ANTAO', rota: '1' }], ['VD794', { name: 'DSP JANGA', rota: '1' }], ['VD871', { name: 'DSP OLINDA II', rota: '1' }], ['VD698', { name: 'DSP OLINDA', rota: '2' }], ['L2493', { name: 'DSP ESPINHEIRO', rota: '2' }], ['VD288', { name: 'DSP RECIFE CENTRO II', rota: '2' }], ['L2589', { name: 'DSP IPUTINGA', rota: '2' }], ['L2368', { name: 'DSP CAXANGA', rota: '2' }], ['L2386', { name: 'DSP IMBIRIBEIRA', rota: '2' }], ['L2421', { name: 'DSP IPSEP', rota: '2' }], ['VD772', { name: 'DSP BOA VIAGEM', rota: '3' }], ['L2617', { name: 'DPSP CONSELHEIRO AGUIAR III', rota: '3' }], ['VD755', { name: 'DSP BOA VIAGEM II', rota: '3' }], ['L2534', { name: 'DSP DOMINGOS FERREIRA', rota: '3' }], ['L2453', { name: 'DSP RIBEIRO DE BRITO', rota: '3' }], ['VD770', { name: 'DSP BOA VIAGEM V', rota: '3' }], ['L2597', { name: 'DSP SETUBAL', rota: '3' }], ['VD767', { name: 'DSP GUARARAPES III', rota: '3' }], ['L2371', { name: 'DSP ROSA E SILVA', rota: '4' }], ['L2375', { name: 'DSP ESTRADA DO ARRAIAL', rota: '4' }], ['VD695', { name: 'DSP TORRE', rota: '4' }], ['L2383', { name: 'DSP MADALENA II', rota: '4' }], ['L2074', { name: 'DSP SHOPPING RIOMAR', rota: '4' }], ['VD690', { name: 'DSP BOA VIAGEM IV', rota: '4' }], ['L2508', { name: 'DSP SHOPPING RECIFE', rota: '4' }], ['L2428', { name: 'DSP PETROLINA', rota: '5' }], ['L2429', { name: 'DSP PETROLina CENTRO', rota: '5' }], ['L2496', { name: 'DSP PETROLINA II', rota: '5' }], ['L2582', { name: 'DSP SHOPPING RIVER', rota: '5' }]
-            ]);
+            // DADOS GLOBAIS
+            const masterStoreList = new Map([['VD825',{name:'DSP JEQUIE',rota:'6'}],['VD992',{name:'DSP VITORIA DA CONQUISTA',rota:'6'}],['L2437',{name:'DSP VITORIA DA CONQUISTA II',rota:'6'}],['L2527',{name:'DSP VITORIA DA CONQUISTA JURACY',rota:'6'}],['VD863',{name:'DSP BARREIRAS',rota:'6'}],['VD862',{name:'DSP LUIS EDUARDO MAGALHAES',rota:'6'}],['L2554',{name:'DSP ITABUNA III',rota:'6'}],['L2290',{name:'DSP LUIS EDUARDO MAGALHAES II',rota:'6'}],['L2291',{name:'DSP SANTO ANTONIO DE JESUS',rota:'6'}],['L2412',{name:'DSP ILHEUS',rota:'6'}],['L2662',{name:'DSP SHOPPING BOULEVARD',rota:'7'}],['L2127',{name:'DSP FEIRA DE SANTANA IV',rota:'7'}],['VD390',{name:'DSP FEIRA DE SANTANA',rota:'7'}],['L2116',{name:'DSP FEIRA DE SANTANA III',rota:'7'}],['VD630',{name:'DSP DIAS DAVILA',rota:'7'}],['VD552',{name:'DSP CAMACARI',rota:'7'}],['L2531',{name:'DSP GUARAJUBA',rota:'7'}],['L2204',{name:'DSP SHOPPING CENTER LAPA',rota:'8'}],['L2538',{name:'DSP SALVADOR 1',rota:'8'}],['L2052',{name:'DSP METRO SALVADOR',rota:'8'}],['L2283',{name:'DSP SHOPPING VITORIA BOULEVARD',rota:'8'}],['L2161',{name:'DSP CANELA II',rota:'8'}],['VD395',{name:'DSP CANELA',rota:'8'}],['L2064',{name:'DSP SALVADOR CHAME CHAME',rota:'8'}],['L2173',{name:'DSP PARQUE SHOPPING BAHIA',rota:'9'}],['L2119',{name:'DSP ESTRADA DO COCO',rota:'9'}],['L2363',{name:'DSP VILAS DO ATLANTICO I',rota:'9'}],['L2668',{name:'DSP ALPHAVILLE LITORAL NORTE',rota:'9'}],['VD547',{name:'DSP ITAPUA',rota:'9'}],['VD458',{name:'DSP ITAPUA II',rota:'9'}],['VD744',{name:'DSP PIATA',rota:'9'}],['VD737',{name:'DSP PATAMARES',rota:'9'}],['VD546',{name:'DSP JORGE AMADO',rota:'9'}],['L2003',{name:'DSP TROBOGY',rota:'10'}],['VD834',{name:'DSP SAO RAFAEL',rota:'10'}],['L2174',{name:'DSP SHOPPING PARALELA',rota:'10'}],['VD845',{name:'DSP CAJAZEIRAS',rota:'10'}],['L2221',{name:'DSP PERIPERI',rota:'10'}],['VD643',{name:'DSP SIMOES FILHO',rota:'10'}],['VD620',{name:'DSP CANDEIAS',rota:'10'}],['L2077',{name:'DSP SHOPPING BELLA VISTA',rota:'11'}],['L2211',{name:'DSP PERNAMBUES',rota:'11'}],['VD544',{name:'DSP MATATU',rota:'11'}],['VD929',{name:'DSP ACUPE DE BROTAS',rota:'11'}],['L2631',{name:'DSP BROTAS III',rota:'11'}],['VD399',{name:'DSP NOVA BROTAS',rota:'11'}],['VD981',{name:'DSP VASCO DA GAMA',rota:'11'}],['L2277',{name:'DSP FEDERACAO SALVADOR',rota:'11'}],['VD397',{name:'DSP ONDINA',rota:'11'}],['L2243',{name:'DSP SHOPPING BARRA SALVADOR',rota:'12'}],['L2088',{name:'DSP RIO VERMELHO II',rota:'12'}],['VD432',{name:'DSP PITUBA III',rota:'12'}],['L2056',{name:'DSP PITUBA IV',rota:'12'}],['VD890',{name:'DSP CAMINHO DAS ARVORES II',rota:'12'}],['VD712',{name:'DSP ANITA GARIBALDI',rota:'12'}],['VD398',{name:'DSP MIGUEL CALMON',rota:'12'}],['L2191',{name:'DSP MARES',rota:'12'}],['VD697',{name:'DSP IMBUI',rota:'13'}],['VD550',{name:'DSP COSTA AZUL',rota:'13'}],['L2123',{name:'DSP COSTA AZUL II',rota:'13'}],['VD936',{name:'DSP STIEP',rota:'13'}],['VD393',{name:'DSP CABULA',rota:'13'}],['VD821',{name:'DSP SALVADOR III',rota:'13'}],['VD530',{name:'DSP LAURO DE FREITAS',rota:'14'}],['VD558',{name:'DSP STELLA MARIS',rota:'14'}],['VD926',{name:'DSP CABULA II',rota:'15'}],['L2169',{name:'DSP CANDEAL',rota:'15'}],['L2093',{name:'DSP SHOPPING DA BAHIA 3 PISO',rota:'15'}],['L2092',{name:'DSP SHOPPING DA BAHIA 2 PISO',rota:'15'}],['L2091',{name:'DSP SHOPPING DA BAHIA 1 PISO',rota:'15'}],['VD713',{name:'DSP LARGO DO TAMARINEIRO',rota:'16'}],['VD970',{name:'DSP CAMINHO DE AREIA',rota:'16'}],['VD604',{name:'DSP GRACA',rota:'16'}],['VD220',{name:'DSP PITUBA',rota:'16'}],['VD434',{name:'DSP ALTO DO ITAIGARA',rota:'16'}],['VD568',{name:'DSP CAMINHO DAS ARVORES',rota:'16'}],['VD913',{name:'DSP CAMINHO DAS ARVORES III',rota:'20'}],['VD435',{name:'DSP SHOPPING SALVADOR',rota:'20'}],['L2280',{name:'DSP ALPHAVILLE SALVADOR',rota:'20'}],['L2507',{name:'DSP SHOPPING PATTEO OLINDA',rota:'1'}],['L2526',{name:'DSP SHOPPING CARUARU',rota:'1'}],['L2438',{name:'DSP CARUARU II',rota:'1'}],['L2384',{name:'DSP VITORIA DE SANTO ANTAO',rota:'1'}],['VD794',{name:'DSP JANGA',rota:'1'}],['VD871',{name:'DSP OLINDA II',rota:'1'}],['VD698',{name:'DSP OLINDA',rota:'2'}],['L2493',{name:'DSP ESPINHEIRO',rota:'2'}],['VD288',{name:'DSP RECIFE CENTRO II',rota:'2'}],['L2589',{name:'DSP IPUTINGA',rota:'2'}],['L2368',{name:'DSP CAXANGA',rota:'2'}],['L2386',{name:'DSP IMBIRIBEIRA',rota:'2'}],['L2421',{name:'DSP IPSEP',rota:'2'}],['VD772',{name:'DSP BOA VIAGEM',rota:'3'}],['L2617',{name:'DPSP CONSELHEIRO AGUIAR III',rota:'3'}],['VD755',{name:'DSP BOA VIAGEM II',rota:'3'}],['L2534',{name:'DSP DOMINGOS FERREIRA',rota:'3'}],['L2453',{name:'DSP RIBEIRO DE BRITO',rota:'3'}],['VD770',{name:'DSP BOA VIAGEM V',rota:'3'}],['L2597',{name:'DSP SETUBAL',rota:'3'}],['VD767',{name:'DSP GUARARAPES III',rota:'3'}],['L2371',{name:'DSP ROSA E SILVA',rota:'4'}],['L2375',{name:'DSP ESTRADA DO ARRAIAL',rota:'4'}],['VD695',{name:'DSP TORRE',rota:'4'}],['L2383',{name:'DSP MADALENA II',rota:'4'}],['L2074',{name:'DSP SHOPPING RIOMAR',rota:'4'}],['VD690',{name:'DSP BOA VIAGEM IV',rota:'4'}],['L2508',{name:'DSP SHOPPING RECIFE',rota:'4'}],['L2428',{name:'DSP PETROLINA',rota:'5'}],['L2429',{name:'DSP PETROLina CENTRO',rota:'5'}],['L2496',{name:'DSP PETROLINA II',rota:'5'}],['L2582',{name:'DSP SHOPPING RIVER',rota:'5'}]]);
             
-            const appState = { fullData: [], productAddresses: new Map() };
+            const appState = { 
+                ordersData: [], 
+                sectorData: [],
+                addressData: new Map(),
+                productMasterData: new Map(),
+                nonReturnedOrders: new Set()
+            };
+            let panelHasBeenAutoClosed = false;
+            let notificationTimeout;
 
+            // MAPEAMENTO DE ELEMENTOS DA UI
             const UIElements = {
                 notification: document.getElementById('notification'),
                 loader: document.getElementById('loader'),
                 views: {
-                    rota: document.getElementById('rota-view'),
-                    produto: document.getElementById('produto-view'),
-                    setor: document.getElementById('setor-view')
+                    validation: document.getElementById('validation-view'),
+                    sector: document.getElementById('sector-view'),
+                    product: document.getElementById('product-view')
                 },
                 buttons: {
-                    switchToRota: document.getElementById('switchToRota'),
-                    switchToProduto: document.getElementById('switchToProduto'),
-                    switchToSetor: document.getElementById('switchToSetor'),
+                    switchToValidation: document.getElementById('switchToValidation'),
+                    switchToSector: document.getElementById('switchToSector'),
+                    switchToProduct: document.getElementById('switchToProduct'),
                     reloadFiles: document.getElementById('reload-files-btn')
                 },
-                fileInput: document.getElementById('fileInput'),
-                addressFileInput: document.getElementById('addressFileInput'),
-                rotaFilter: document.getElementById('rotaFilter'),
-                productSearchInput: document.getElementById('productSearch'),
-                productSuggestions: document.getElementById('product-suggestions'),
-                productRotaFilter: document.getElementById('productRotaFilter'),
-                productFilialFilter: document.getElementById('productFilialFilter'),
-                copyProductDataBtn: document.getElementById('copyProductDataBtn'),
+                inputs: {
+                    orders: document.getElementById('ordersFileInput'),
+                    status: document.getElementById('statusFileInput'),
+                    sector: document.getElementById('sectorFileInput'),
+                    address: document.getElementById('addressFileInput'),
+                    productMaster: document.getElementById('productMasterFileInput')
+                },
+                dropAreas: {
+                    orders: document.getElementById('ordersFileInputArea'),
+                    status: document.getElementById('statusFileInputArea'),
+                    sector: document.getElementById('sectorFileInputArea'),
+                    address: document.getElementById('addressFileInputArea'),
+                    productMaster: document.getElementById('productMasterFileInputArea')
+                },
                 containers: {
-                    rotaResults: document.getElementById('rota-results-container'),
-                    produtoResults: document.getElementById('produto-results-container'),
-                    setorResults: document.getElementById('setor-results-container'),
-                    missingStores: document.getElementById('missing-stores-container'),
-                    geralSummary: document.getElementById('geral-summary-container'),
-                    fileInputs: document.getElementById('file-inputs-container'),
+                    validationSummary: document.getElementById('validation-summary-container'),
+                    validationResults: document.getElementById('validation-results-container'),
+                    sectorSummary: document.getElementById('sector-summary-container'),
+                    sectorResults: document.getElementById('sector-results-container'),
+                    productAnalysis: document.getElementById('product-analysis-container'),
                     reloadFiles: document.getElementById('reload-files-container')
                 },
-                contentAreas: {
-                    rotaAnalysis: document.getElementById('rota-analysis-content'),
-                    productSearch: document.getElementById('product-search-content'),
-                    productAnalysis: document.getElementById('product-analysis-content')
-                },
-                fileInputArea: document.getElementById('fileInputArea'),
-                addressFileInputArea: document.getElementById('addressFileInputArea'),
+                fileControl: {
+                    panel: document.getElementById('file-control-panel'),
+                    header: document.getElementById('file-control-header'),
+                    icon: document.querySelector('#file-control-header .toggle-icon')
+                }
             };
 
-            let notificationTimeout;
-
+            // FUNÇÕES UTILITÁRIAS
             function showNotification(message, type = 'success', duration = 3500) {
                 clearTimeout(notificationTimeout);
                 UIElements.notification.textContent = message;
@@ -369,40 +554,16 @@
                 notificationTimeout = setTimeout(() => UIElements.notification.classList.remove('show'), duration);
             }
 
-            function normalizeProductCode(code) {
+            function normalizeCode(code) {
                 if (code === null || typeof code === 'undefined') return '';
                 const strCode = String(code).trim();
                 return /^\d+$/.test(strCode) ? String(parseInt(strCode, 10)) : strCode;
             }
-
-            /**
-             * Copia um texto para a área de transferência. Utiliza o método de fallback document.execCommand
-             * que é mais robusto em ambientes restritos como iframes.
-             * @param {string} text - O texto a ser copiado.
-             * @param {string} successMessage - A mensagem a ser exibida em caso de sucesso.
-             */
-            function copyTextToClipboard(text, successMessage) {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                // Torna o textarea invisível e o remove do fluxo do documento
-                textArea.style.position = "fixed";
-                textArea.style.top = "-9999px";
-                textArea.style.left = "-9999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        showNotification(successMessage, 'success');
-                    } else {
-                        showNotification('Falha ao copiar.', 'error');
-                    }
-                } catch (err) {
-                    showNotification('Falha ao copiar.', 'error');
-                    console.error('Falha ao copiar com método de fallback', err);
-                }
-                document.body.removeChild(textArea);
+            
+            // NOVA FUNÇÃO: Formata números com separador de milhar.
+            function formatNumber(num) {
+                if (typeof num !== 'number') return num;
+                return Math.round(num).toLocaleString('pt-BR');
             }
 
             function setupFileDropArea(dropArea, fileInput) {
@@ -416,8 +577,8 @@
                     fileInput.dispatchEvent(new Event('change'));
                 }, false);
             }
-            
-            function processUploadedFile(file, processFn, targetSheetName = null) {
+
+            function processUploadedFile(file, processFn) {
                 if (!file) return;
                 UIElements.loader.classList.remove('hidden');
                 setTimeout(() => {
@@ -425,8 +586,7 @@
                     reader.onload = e => {
                         try {
                             const workbook = XLSX.read(e.target.result, { type: 'array' });
-                            const sheetName = targetSheetName ? (workbook.SheetNames.find(name => name.toLowerCase().trim() === targetSheetName.toLowerCase()) || workbook.SheetNames[0]) : workbook.SheetNames[0];
-                            const worksheet = workbook.Sheets[sheetName];
+                            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                             const jsonData = XLSX.utils.sheet_to_json(worksheet);
                             processFn(jsonData);
                         } catch (error) {
@@ -443,393 +603,674 @@
                     reader.readAsArrayBuffer(file);
                 }, 50);
             }
-
+            
+            // HANDLERS DE ARQUIVOS
             function handleOrdersFile(event) {
                 processUploadedFile(event.target.files[0], (data) => {
-                    if (data.length === 0) {
-                        showNotification('A planilha de pedidos está vazia.', 'warning');
-                        return;
+                    appState.ordersData = data;
+                    try {
+                        localStorage.setItem('ordersData', JSON.stringify(data));
+                        showNotification('Planilha de pedidos carregada e guardada!', 'success');
+                    } catch (e) {
+                        console.warn("Não foi possível guardar 'ordersData' no localStorage:", e);
+                        showNotification('Planilha de pedidos carregada (ficheiro grande, não será guardado para a próxima sessão).', 'warning');
                     }
-                    appState.fullData = data;
-                    UIElements.fileInputArea.classList.add('loaded');
-                    runFullAnalysis();
-                    UIElements.contentAreas.rotaAnalysis.classList.remove('hidden');
-                    UIElements.contentAreas.productSearch.classList.remove('hidden');
-                    UIElements.containers.fileInputs.classList.add('hidden');
-                    UIElements.containers.reloadFiles.classList.remove('hidden');
-                    showNotification('Planilha de pedidos carregada!', 'success');
-                }, 'Loja Cross');
+                    UIElements.dropAreas.orders.classList.add('loaded');
+                    UIElements.buttons.reloadFiles.classList.remove('hidden');
+                    runValidationAnalysis();
+                });
+            }
+
+            function handleStatusFile(event) {
+                processUploadedFile(event.target.files[0], (data) => {
+                    appState.nonReturnedOrders.clear();
+                    data.forEach(row => {
+                        const orderId = String(row['Pedido Final'] || '').trim();
+                        const status = String(row['Status'] || '').trim().toUpperCase();
+                        if (orderId && status === 'NÃO RETORNADO') {
+                            appState.nonReturnedOrders.add(orderId);
+                        }
+                    });
+                    try {
+                        localStorage.setItem('nonReturnedOrders', JSON.stringify(Array.from(appState.nonReturnedOrders)));
+                        showNotification(`${appState.nonReturnedOrders.size} pedidos pendentes encontrados e guardados.`, 'success');
+                    } catch (e) {
+                        console.warn("Não foi possível guardar 'nonReturnedOrders' no localStorage:", e);
+                        showNotification(`${appState.nonReturnedOrders.size} pedidos pendentes encontrados (não serão guardados para a próxima sessão).`, 'warning');
+                    }
+                    UIElements.dropAreas.status.classList.add('loaded');
+                    UIElements.buttons.reloadFiles.classList.remove('hidden');
+                    runValidationAnalysis();
+                });
+            }
+
+            function handleSectorFile(event) {
+                processUploadedFile(event.target.files[0], (data) => {
+                    appState.sectorData = data;
+                    try {
+                        localStorage.setItem('sectorData', JSON.stringify(data));
+                        showNotification('Planilha de itens carregada e guardada!', 'success');
+                    } catch (e) {
+                        console.warn("Não foi possível guardar 'sectorData' no localStorage:", e);
+                        showNotification('Planilha de itens carregada (ficheiro grande, não será guardado para a próxima sessão).', 'warning');
+                    }
+                    UIElements.dropAreas.sector.classList.add('loaded');
+                    UIElements.buttons.reloadFiles.classList.remove('hidden');
+                    runSectorAnalysis();
+                    runProductAnalysis();
+                });
             }
 
             function handleAddressFile(event) {
                 processUploadedFile(event.target.files[0], (data) => {
-                    appState.productAddresses.clear();
+                    appState.addressData.clear();
                     data.forEach(row => {
-                        const code = normalizeProductCode(row['Código Produto'] || row['Item']);
+                        const code = normalizeCode(row['Código Produto'] || row['Item']);
                         const address = String(row['Endereço'] || '').trim();
-                        if (code && address) appState.productAddresses.set(code, address);
+                        if (code && address) appState.addressData.set(code, address);
                     });
-                    UIElements.addressFileInputArea.classList.add('loaded');
-                    showNotification(`${appState.productAddresses.size} endereços carregados.`, 'success');
-                    if (appState.fullData.length > 0) runFullAnalysis();
+                    try {
+                        localStorage.setItem('addressData', JSON.stringify(Array.from(appState.addressData.entries())));
+                        showNotification(`${appState.addressData.size} endereços carregados e guardados.`, 'success');
+                    } catch (e) {
+                        console.warn("Não foi possível guardar 'addressData' no localStorage:", e);
+                        showNotification(`${appState.addressData.size} endereços carregados (não serão guardados para a próxima sessão).`, 'warning');
+                    }
+                    UIElements.dropAreas.address.classList.add('loaded');
+                    UIElements.buttons.reloadFiles.classList.remove('hidden');
+                    runSectorAnalysis();
+                    runProductAnalysis();
                 });
-            }
-
-            function runFullAnalysis() {
-                if (appState.fullData.length === 0) return;
-                const processedData = processData(appState.fullData);
-                displayGeralSummary(processedData.geral);
-                displayRotaResults(processedData.rotas);
-                displaySetorResults(processedData.setores);
-                populateRotaFilter(Object.keys(processedData.rotas));
             }
             
-            function resetAnalysis() {
-                appState.fullData = [];
-                appState.productAddresses.clear();
-
-                Object.values(UIElements.containers).forEach(container => {
-                    if(container.id !== 'file-inputs-container' && container.id !== 'reload-files-container') {
-                        container.innerHTML = '';
+            function handleProductMasterFile(event) {
+                processUploadedFile(event.target.files[0], (data) => {
+                    appState.productMasterData.clear();
+                    data.forEach(row => {
+                        const code = normalizeCode(row['Código'] || row['Item']);
+                        const qms = parseInt(row['QMS'], 10);
+                        if (code && !isNaN(qms)) {
+                            appState.productMasterData.set(code, qms);
+                        }
+                    });
+                    try {
+                        localStorage.setItem('productMasterData', JSON.stringify(Array.from(appState.productMasterData.entries())));
+                        showNotification(`${appState.productMasterData.size} QMS de produtos carregados e guardados.`, 'success');
+                    } catch (e) {
+                        console.warn("Não foi possível guardar 'productMasterData' no localStorage:", e);
+                        showNotification(`${appState.productMasterData.size} QMS carregados (não serão guardados para a próxima sessão).`, 'warning');
                     }
+                    UIElements.dropAreas.productMaster.classList.add('loaded');
+                    runProductAnalysis();
                 });
-                UIElements.containers.geralSummary.classList.add('hidden');
-                
-                Object.values(UIElements.contentAreas).forEach(area => area.classList.add('hidden'));
-
-                UIElements.fileInputArea.classList.remove('loaded');
-                UIElements.addressFileInputArea.classList.remove('loaded');
-                UIElements.fileInput.value = '';
-                UIElements.addressFileInput.value = '';
-
-                UIElements.containers.fileInputs.classList.remove('hidden');
-                UIElements.containers.reloadFiles.classList.add('hidden');
-
-                UIElements.buttons.switchToRota.click();
-                showNotification('Pronto para carregar novos arquivos.', 'warning');
             }
 
-            function processData(data) {
+            function autoClosePanel() {
+                if (!panelHasBeenAutoClosed && UIElements.fileControl.panel.classList.contains('open')) {
+                    UIElements.fileControl.header.click();
+                    panelHasBeenAutoClosed = true;
+                }
+            }
+            
+            // LÓGICA DE ANÁLISE PRINCIPAL
+            function runValidationAnalysis() {
+                if (appState.ordersData.length === 0 || appState.nonReturnedOrders.size === 0) {
+                    UIElements.containers.validationResults.innerHTML = `<div class="placeholder-card"><p>Carregue a <strong>Planilha de Pedidos</strong> e a <strong>Planilha de Status</strong> para iniciar a validação.</p></div>`;
+                    return;
+                }
+                
+                const filteredData = appState.ordersData.filter(row => {
+                    const orderId = String(row['C. Legado'] || '').trim();
+                    return orderId && appState.nonReturnedOrders.has(orderId);
+                });
+
+                if (filteredData.length === 0) {
+                    UIElements.containers.validationSummary.innerHTML = `
+                        <div class="summary-card" style="background-color: var(--warning-light); border-color: var(--warning-color); color: var(--warning-dark); text-align: left;">
+                            <style> .summary-card ul { font-size: 0.9em; margin-top: 1rem; list-style-position: inside; padding-left: 0;} .summary-card li { margin-bottom: 0.5rem; } </style>
+                            <h2>Nenhum Pedido Pendente Encontrado</h2>
+                            <p style="font-size: 1em; font-weight: 500;">A análise não retornou resultados. Por favor, verifique se:</p>
+                            <ul>
+                                <li>A coluna <strong>'C. Legado'</strong> na "Planilha de Pedidos" corresponde exatamente à coluna <strong>'Pedido Final'</strong> na "Planilha de Status".</li>
+                                <li>Realmente existem pedidos com o status <strong>'NÃO RETORNADO'</strong> que também estão presentes na "Planilha de Pedidos".</li>
+                            </ul>
+                        </div>`;
+                    UIElements.containers.validationResults.innerHTML = '';
+                    autoClosePanel();
+                    return;
+                }
+                const uniquePendingOrders = new Set(filteredData.map(row => String(row['C. Legado'] || '').trim()));
+
                 const rotasData = {};
-                const storesWithValidOrders = new Set();
-                const setoresData = {};
-                const skusGeral = new Set();
-                let unidadesGeral = 0;
+                let totalUnidades = 0;
 
-                for (const row of data) {
-                    const quantidade = parseFloat(row['Sum Qtd Solicitada']);
-                    const pedidoWMS = String(row['Nº Pedido WMS'] || '').trim();
-                    const itemCode = normalizeProductCode(row['Item']);
+                for (const row of filteredData) {
+                    const quantidade = parseFloat(row['Tot'] || row['Sum Qtd Solicitada'] || 0);
+                    const pedidoLegado = String(row['C. Legado'] || '').trim();
+                    if (isNaN(quantidade) || !pedidoLegado) continue;
 
-                    if (isNaN(quantidade) || !pedidoWMS || quantidade <= 0 || !itemCode) continue;
-
-                    skusGeral.add(itemCode);
-                    unidadesGeral += quantidade;
-
-                    const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
-                    storesWithValidOrders.add(codigoLoja);
+                    totalUnidades += quantidade;
                     
+                    const clienteField = String(row['Cliente'] || '').trim();
+                    const codigoLoja = clienteField.split('-')[0].trim();
                     let rotaOriginal = String(row['Rota'] || 'N/A').trim();
                     const storeInfo = masterStoreList.get(codigoLoja);
                     
-                    // Lógica da Rota 916
-                    if (storeInfo && rotaOriginal === '916') {
-                        rotaOriginal = storeInfo.rota;
-                    }
-                    
-                    const nomeLoja = storeInfo ? storeInfo.name : String(row['Nome da Loja'] || 'N/A').trim();
+                    if (storeInfo && rotaOriginal === '916') rotaOriginal = storeInfo.rota;
+                    const nomeLoja = storeInfo ? storeInfo.name : clienteField.split('-').slice(1).join('-').trim() || 'N/A';
 
-                    if (!rotasData[rotaOriginal]) rotasData[rotaOriginal] = { pedidos: {} };
-                    if (!rotasData[rotaOriginal].pedidos[pedidoWMS]) {
-                        rotasData[rotaOriginal].pedidos[pedidoWMS] = { nome: nomeLoja, codigo: codigoLoja, produtos: [] };
-                    }
-                    rotasData[rotaOriginal].pedidos[pedidoWMS].produtos.push({ item: itemCode, descr: String(row['Descr'] || '').trim(), qtd: quantidade });
+                    if (!rotasData[rotaOriginal]) rotasData[rotaOriginal] = { pedidos: [] };
                     
-                    // Processamento por Setor
-                    const address = appState.productAddresses.get(itemCode);
-                    const setor = address ? address.split('.')[0] : 'Sem Endereço';
-                    if (!setoresData[setor]) setoresData[setor] = { products: {} };
-                    if (!setoresData[setor].products[itemCode]) {
-                        setoresData[setor].products[itemCode] = { descr: String(row['Descr'] || 'N/A').trim(), address: address || 'N/A', totalQtd: 0 };
-                    }
-                    setoresData[setor].products[itemCode].totalQtd += quantidade;
+                    rotasData[rotaOriginal].pedidos.push({
+                        codigo: codigoLoja,
+                        nome: nomeLoja,
+                        pedido: pedidoLegado, // Usar o C. Legado para exibição e ordenação
+                        qtd: quantidade
+                    });
                 }
 
-                const missingStoresByRota = new Map();
-                masterStoreList.forEach((info, codigo) => {
-                    if (!storesWithValidOrders.has(codigo)) {
-                        const rota = info.rota;
-                        if (!missingStoresByRota.has(rota)) {
-                            missingStoresByRota.set(rota, []);
-                        }
-                        missingStoresByRota.get(rota).push(`${info.name} (${codigo})`);
-                    }
-                });
-                displayMissingStores(missingStoresByRota);
-
-                return {
-                    geral: { totalUnidades: unidadesGeral, totalSkus: skusGeral.size },
-                    rotas: rotasData,
-                    setores: setoresData
-                };
-            }
-
-            function displayGeralSummary({ totalUnidades, totalSkus }) {
-                UIElements.containers.geralSummary.innerHTML = `
-                    <div class="geral-summary-grid">
-                        <div class="geral-summary-card">
-                            <div class="icon unidades"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div>
-                            <div class="info"><p>Total de Unidades</p><div class="value">${Math.round(totalUnidades)}</div></div>
-                        </div>
-                        <div class="geral-summary-card">
-                            <div class="icon skus"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 20v2"/><path d="M5 12H3"/><path d="M21 12h-2"/><path d="m18.36 5.64-.18-.18"/><path d="m5.82 18.18-.18-.18"/><path d="m18.18 18.18-.18.18"/><path d="m5.64 5.64-.18.18"/></svg></div>
-                            <div class="info"><p>Total de SKUs</p><div class="value">${totalSkus}</div></div>
-                        </div>
+                UIElements.containers.validationSummary.innerHTML = `
+                    <div class="summary-card" style="background-color: var(--warning-light); border-color: var(--warning-color); color: var(--warning-dark);">
+                        <h2>Resultado da Validação</h2>
+                        <p>${uniquePendingOrders.size} pedidos pendentes, totalizando ${Math.round(totalUnidades)} unidades.</p>
                     </div>`;
-                UIElements.containers.geralSummary.classList.remove('hidden');
+                
+                displayValidationRouteResults(rotasData, UIElements.containers.validationResults);
+                autoClosePanel();
             }
 
-            function displayMissingStores(storesByRota) {
-                const container = UIElements.containers.missingStores;
-                container.innerHTML = '';
-                if (storesByRota.size === 0) return;
-
-                const warningCard = document.createElement('div');
-                warningCard.className = 'warning-card';
-                warningCard.innerHTML = `<h2>Filiais da Lista Mestra Sem Pedidos Válidos</h2>`;
-
-                const sortedRotas = [...storesByRota.keys()].sort((a, b) => Number(a) - Number(b));
-
-                sortedRotas.forEach(rota => {
-                    const stores = storesByRota.get(rota).sort();
-                    
-                    const accordionItem = document.createElement('div');
-                    accordionItem.className = 'missing-stores-accordion-item';
-
-                    const listItems = stores.map(store => `<li>${store}</li>`).join('');
-
-                    accordionItem.innerHTML = `
-                        <div class="missing-stores-accordion-header">
-                            <span>Rota ${rota} (${stores.length} Filial/is)</span>
-                        </div>
-                        <div class="missing-stores-accordion-content">
-                            <ul>${listItems}</ul>
-                        </div>
-                    `;
-                    
-                    accordionItem.querySelector('.missing-stores-accordion-header').addEventListener('click', () => {
-                        accordionItem.classList.toggle('open');
-                    });
-
-                    warningCard.appendChild(accordionItem);
-                });
-
-                container.appendChild(warningCard);
-            }
-
-            function displayRotaResults(rotasData) {
-                const container = UIElements.containers.rotaResults;
-                container.innerHTML = "";
-                const sortedRotas = Object.keys(rotasData).sort((a, b) => Number(a) - Number(b));
-
-                if (sortedRotas.length === 0 && UIElements.containers.missingStores.innerHTML === '') {
-                    container.innerHTML = "<div class='summary-card'>Nenhum pedido válido encontrado.</div>";
+            function runSectorAnalysis() {
+                if (appState.sectorData.length === 0) {
+                    UIElements.containers.sectorResults.innerHTML = `<div class="placeholder-card"><p>Carregue a <strong>Planilha de Itens</strong> para iniciar a análise.</p></div>`;
+                    UIElements.containers.sectorSummary.innerHTML = '';
                     return;
                 }
+
+                // Estruturas de dados para as novas análises
+                const setoresData = new Map();
+                const filialData = new Map(); // ESTRUTURA PARA FATURAMENTO POR FILIAIS
+                const filiaisComFaturamento = new Set(); // NOVO: Para rastrear lojas com vendas
+                let totalQuantidade = 0;
+                let totalSkus = new Set();
+
+                for (const row of appState.sectorData) {
+                    const quantidade = parseFloat(row['Qtd'] || row['Sum Qtd Solicitada'] || row['Tot'] || 0);
+                    const itemCode = normalizeCode(row['Item']);
+                    if (isNaN(quantidade) || !itemCode) continue;
+
+                    totalQuantidade += quantidade;
+                    totalSkus.add(itemCode);
+                    
+                    // --- AGREGAÇÃO PARA FATURAMENTO POR FILIAIS (LÓGICA CORRIGIDA) ---
+                    const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
+                    if (codigoLoja) {
+                        filiaisComFaturamento.add(codigoLoja); // Adiciona o código da loja com faturamento
+                        let rota = String(row['Rota'] || 'N/A').trim();
+                        const storeInfo = masterStoreList.get(codigoLoja);
+                        
+                        const nomeLoja = storeInfo ? storeInfo.name : (String(row['Nome da Loja'] || '').trim() || 'N/A');
+
+                        if (storeInfo && rota === '916') rota = storeInfo.rota;
+
+                        if (!filialData.has(rota)) {
+                            filialData.set(rota, new Map());
+                        }
+                        const filiaisDaRota = filialData.get(rota);
+                        const filialKey = `${codigoLoja} - ${nomeLoja}`;
+                        filiaisDaRota.set(filialKey, (filiaisDaRota.get(filialKey) || 0) + quantidade);
+                    }
+
+
+                    // --- AGREGAÇÃO PARA ACOMPANHAMENTO POR SETOR ---
+                    const address = appState.addressData.get(itemCode);
+                    if (address) { 
+                        const setor = address.split('.')[0];
+                        const descr = String(row['Descr'] || 'N/A').trim();
+
+                        if (!setoresData.has(setor)) {
+                            setoresData.set(setor, { totalQtd: 0, products: new Map() });
+                        }
+                        const setorInfo = setoresData.get(setor);
+                        setorInfo.totalQtd += quantidade;
+                        const productInfo = setorInfo.products.get(itemCode) || { descr: descr, totalQtd: 0 };
+                        productInfo.totalQtd += quantidade;
+                        setorInfo.products.set(itemCode, productInfo);
+                    }
+                }
                 
-                sortedRotas.forEach(rota => {
-                    const rotaBlock = document.createElement('div');
-                    rotaBlock.className = 'rota-block';
-                    rotaBlock.dataset.rota = rota;
-                    const rotaInfo = rotasData[rota];
-                    const totalPedidos = Object.keys(rotaInfo.pedidos).length;
-                    const totalItensGeral = Object.values(rotaInfo.pedidos).reduce((sum, p) => sum + p.produtos.reduce((s, prod) => s + prod.qtd, 0), 0);
-                    
-                    rotaBlock.innerHTML = `<h2>Rota ${rota}</h2><div class="summary-card"><h2>Resumo da Rota</h2><p>${Math.round(totalItensGeral)} Itens | ${totalPedidos} Pedido(s)</p></div>`;
-                    
-                    const table = document.createElement('table');
-                    table.innerHTML = `<thead><tr><th>VD/L</th><th>Filial</th><th>Nº Pedido WMS</th></tr></thead>`;
-                    const tbody = document.createElement('tbody');
-                    
-                    Object.keys(rotaInfo.pedidos).sort().forEach(pedido => {
-                        const loja = rotaInfo.pedidos[pedido];
-                        const mainRow = tbody.insertRow();
-                        mainRow.className = 'expandable-row';
-                        mainRow.innerHTML = `<td>${loja.codigo}</td><td>${loja.nome}</td><td>${pedido}</td>`;
-                        const detailsRow = tbody.insertRow();
-                        detailsRow.className = 'product-details-row hidden';
-                        const detailsCell = detailsRow.insertCell(0);
-                        detailsCell.colSpan = 3;
-                        
-                        let productsHtml = `<div style="padding: 1rem; background-color: #f8f9fa;"><table style="box-shadow: none;"><thead><tr><th>Item</th><th>Endereço</th><th>Descrição</th><th>Qtd.</th></tr></thead><tbody>`;
-                        loja.produtos.forEach(p => {
-                            productsHtml += `<tr><td>${p.item}</td><td>${appState.productAddresses.get(p.item) || 'N/A'}</td><td>${p.descr}</td><td>${p.qtd}</td></tr>`;
-                        });
-                        detailsCell.innerHTML = productsHtml + '</tbody></table></div>';
-                        
-                        mainRow.addEventListener('click', () => {
-                            mainRow.classList.toggle('open');
-                            detailsRow.classList.toggle('hidden');
-                        });
-                    });
-                    table.appendChild(tbody);
-                    rotaBlock.appendChild(table);
-                    container.appendChild(rotaBlock);
-                });
+                const totalUniqueFiliais = filiaisComFaturamento.size;
+
+                // NOVO CÁLCULO: Encontrar filiais sem faturamento
+                const filiaisSemFaturamento = [];
+                for (const [storeCode, storeInfo] of masterStoreList.entries()) {
+                    if (!filiaisComFaturamento.has(storeCode)) {
+                        filiaisSemFaturamento.push(`${storeCode} - ${storeInfo.name}`);
+                    }
+                }
+
+                UIElements.containers.sectorSummary.innerHTML = `
+                     <div class="geral-summary-grid">
+                         <div class="geral-summary-card"><div class="icon sector"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div><div class="info"><p>Quantidade Total</p><div class="value">${formatNumber(totalQuantidade)}</div></div></div>
+                         <div class="geral-summary-card"><div class="icon skus"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 20v2"/><path d="M5 12H3"/><path d="M21 12h-2"/><path d="m18.36 5.64-.18-.18"/><path d="m5.82 18.18-.18-.18"/><path d="m18.18 18.18-.18.18"/><path d="m5.64 5.64-.18.18"/></svg></div><div class="info"><p>Total de SKUs Analisados</p><div class="value">${formatNumber(totalSkus.size)}</div></div></div>
+                    </div>`;
+                
+                // Passa todos os dados agregados para a função de exibição
+                displaySectorResults({ setoresData, filialData, totalQuantidadeGeral: totalQuantidade, totalSkusGeral: totalSkus.size, totalUniqueFiliais, filiaisSemFaturamento });
+                autoClosePanel();
             }
 
-            function displaySetorResults(setoresData) {
-                const container = UIElements.containers.setorResults;
-                container.innerHTML = '<h2>Análise por Setor de Estoque</h2>';
+            function runProductAnalysis() {
+                if (appState.sectorData.length === 0) {
+                    UIElements.containers.productAnalysis.innerHTML = `<div class="placeholder-card"><p>Carregue a <strong>Planilha de Itens</strong> para visualizar a análise de produtos.</p></div>`;
+                    return;
+                }
+
+                const productQuantities = new Map();
+                const productDescriptions = new Map();
+
+                // Aggregate quantities from sectorData
+                for (const row of appState.sectorData) {
+                    const code = normalizeCode(row['Item']);
+                    const qty = parseFloat(row['Qtd'] || row['Sum Qtd Solicitada'] || row['Tot'] || 0);
+                    const descr = String(row['Descr'] || 'N/A').trim();
+
+                    if (code && !isNaN(qty)) {
+                        productQuantities.set(code, (productQuantities.get(code) || 0) + qty);
+                        if (!productDescriptions.has(code)) {
+                            productDescriptions.set(code, descr);
+                        }
+                    }
+                }
                 
-                Object.keys(setoresData).sort().forEach(setor => {
-                    const setorInfo = setoresData[setor];
-                    const productEntries = Object.entries(setorInfo.products);
-                    const totalSkus = productEntries.length;
-                    const totalUnidades = productEntries.reduce((sum, [, prod]) => sum + prod.totalQtd, 0);
+                const totalGeralUnidades = [...productQuantities.values()].reduce((sum, qty) => sum + qty, 0);
 
-                    const top20Products = productEntries.sort(([,a], [,b]) => b.totalQtd - a.totalQtd).slice(0, 20);
-                    const top20Unidades = top20Products.reduce((sum, [, prod]) => sum + prod.totalQtd, 0);
-                    const top20Percentual = totalUnidades > 0 ? (top20Unidades / totalUnidades) * 100 : 0;
+                const analysisData = [...productQuantities.entries()].map(([code, unidades]) => {
+                    const qms = appState.productMasterData.get(code) || 1;
+                    const address = appState.addressData.get(code) || 'N/A';
+                    const setor = address !== 'N/A' ? address.split('.')[0] : 'N/A';
+                    const cx = qms > 0 ? unidades / qms : 0;
+                    const percent = totalGeralUnidades > 0 ? (unidades / totalGeralUnidades) * 100 : 0;
 
+                    return {
+                        codigo: code,
+                        skus: productDescriptions.get(code) || 'N/A',
+                        unidades: unidades,
+                        qms: qms,
+                        cx: cx,
+                        percent: percent,
+                        setor: setor,
+                        posicao: address
+                    };
+                });
+
+                analysisData.sort((a, b) => b.unidades - a.unidades);
+                
+                // Pega apenas os 20 maiores SKUs para exibição
+                const top20Data = analysisData.slice(0, 20);
+
+                displayProductAnalysisResults(top20Data);
+            }
+            
+            // FUNÇÕES DE EXIBIÇÃO
+            function displayValidationRouteResults(rotasData, container) {
+                container.innerHTML = ""; // Limpa resultados anteriores
+                const sortedRotas = Object.keys(rotasData).sort((a, b) => Number(a) - Number(b));
+
+                sortedRotas.forEach(rota => {
+                    const rotaInfo = rotasData[rota];
+                    const totalPedidosCount = rotaInfo.pedidos.length;
+                    const totalItensGeral = rotaInfo.pedidos.reduce((sum, p) => sum + p.qtd, 0);
+
+                    // Cria o contêiner principal do item do accordion
                     const accordionItem = document.createElement('div');
-                    accordionItem.className = 'setor-accordion-item';
+                    accordionItem.className = 'rota-accordion-item';
 
-                    let tableRows = '';
-                    top20Products.forEach(([code, prod]) => {
-                        tableRows += `<tr><td>${code}</td><td>${prod.descr}</td><td>${prod.address}</td><td>${Math.round(prod.totalQtd)}</td></tr>`;
-                    });
+                    // Ordena os pedidos para esta rota
+                    rotaInfo.pedidos.sort((a, b) => a.pedido.localeCompare(b.pedido, undefined, { numeric: true }));
 
+                    // Cria as linhas da tabela como uma string HTML
+                    const tableRows = rotaInfo.pedidos.map(pedido =>
+                        `<tr><td>${pedido.codigo}</td><td>${pedido.nome}</td><td>${pedido.pedido}</td><td>${Math.round(pedido.qtd)}</td></tr>`
+                    ).join('');
+
+                    // Define o HTML interno para todo o item do accordion
                     accordionItem.innerHTML = `
-                        <div class="setor-accordion-header">
-                            <h3>Setor: ${setor}</h3>
-                            <div class="setor-summary-info">
-                                <span><strong>SKUs:</strong> ${totalSkus}</span>
-                                <span><strong>Unidades:</strong> ${Math.round(totalUnidades)}</span>
+                        <div class="rota-accordion-header">
+                            <h2>Rota ${rota}</h2>
+                            <div class="rota-summary-info">
+                                <span>${totalPedidosCount} Pedido(s)</span>
+                                <span>|</span>
+                                <span>${Math.round(totalItensGeral)} Unidades</span>
                             </div>
-                            <button class="copy-button copy-setor-btn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                Copiar Top 20
-                            </button>
+                            <span class="toggle-icon-rota">▼</span>
                         </div>
-                        <div class="setor-accordion-content">
-                           <div class="content-wrapper">
-                                <div class="setor-top20-summary">
-                                    Soma do Top 20: <strong>${Math.round(top20Unidades)} unidades</strong> (${top20Percentual.toFixed(2)}% do total do setor)
-                                </div>
-                                <h4>Top 20 Produtos do Setor</h4>
+                        <div class="rota-accordion-content">
+                            <div class="content-wrapper">
                                 <table>
-                                    <thead><tr><th>Cód.</th><th>Descrição</th><th>Endereço</th><th>Qtd Total</th></tr></thead>
+                                    <thead><tr><th>VD/L</th><th>Filial</th><th>Nº Pedido</th><th>Qtd. Total</th></tr></thead>
                                     <tbody>${tableRows}</tbody>
                                 </table>
-                           </div>
-                        </div>`;
+                            </div>
+                        </div>
+                    `;
 
-                    accordionItem.querySelector('.setor-accordion-header').addEventListener('click', (e) => {
-                        if (e.target.classList.contains('copy-setor-btn') || e.target.closest('.copy-setor-btn')) return;
+                    // Adiciona o evento de clique ao cabeçalho
+                    const header = accordionItem.querySelector('.rota-accordion-header');
+                    header.addEventListener('click', () => {
                         accordionItem.classList.toggle('open');
                     });
-                    
-                    accordionItem.querySelector('.copy-setor-btn').addEventListener('click', () => {
-                        let textToCopy = `*Top 20 - Setor: ${setor}*\n*Total SKUs: ${totalSkus} | Total Unidades: ${Math.round(totalUnidades)}*\n*Soma do Top 20: ${Math.round(top20Unidades)} unidades (${top20Percentual.toFixed(2)}% do total)*\n\n`;
-                        top20Products.forEach(([code, prod]) => {
-                           textToCopy += `- *${prod.descr}* (${code})\n  Endereço: ${prod.address} | Qtd: ${Math.round(prod.totalQtd)}\n`;
-                        });
-                        copyTextToClipboard(textToCopy, `Dados do setor ${setor} copiados!`);
-                    });
 
+                    // Adiciona o novo item do accordion ao contêiner
                     container.appendChild(accordionItem);
                 });
             }
-            
-            function displayProductResults(data) {
-                const container = UIElements.containers.produtoResults;
-                container.innerHTML = "";
-                UIElements.contentAreas.productAnalysis.classList.add('hidden');
 
-                const groupedByItem = data.reduce((acc, row) => {
-                    const itemCode = normalizeProductCode(row['Item']);
-                    if (!itemCode) return acc;
-                    if (!acc[itemCode]) acc[itemCode] = { descr: String(row['Descr'] || 'N/A').trim(), rows: [] };
-                    acc[itemCode].rows.push(row);
-                    return acc;
-                }, {});
-
-                if (Object.keys(groupedByItem).length === 0) {
-                    container.innerHTML = `<div class="summary-card">Nenhum resultado encontrado.</div>`;
-                    return;
-                }
-
-                UIElements.contentAreas.productAnalysis.classList.remove('hidden');
+            function displaySectorResults({ setoresData, filialData, totalQuantidadeGeral, totalSkusGeral, totalUniqueFiliais, filiaisSemFaturamento }) {
+                const container = UIElements.containers.sectorResults;
+                container.innerHTML = ''; // Limpa completamente para reconstruir
                 
-                Object.keys(groupedByItem).sort().forEach(itemCode => {
-                    const product = groupedByItem[itemCode];
-                    let totalQuantity = 0;
-                    const tableBody = document.createElement('tbody');
+                // --- SEÇÃO 1: ACOMPANHAMENTO POR SETOR ---
+                const sectorSection = document.createElement('div');
+                
+                if (setoresData.size > 0) {
+                    // --- 1. Classificação de Ameaça (Cores) ---
+                    const sectorsByUnits = [...setoresData.entries()].sort((a, b) => b[1].totalQtd - a[1].totalQtd);
+                    const threatMap = new Map();
+                    const highThreatCount = Math.ceil(sectorsByUnits.length * 0.25); // Top 25%
+                    const mediumThreatCount = Math.ceil(sectorsByUnits.length * 0.60); // Próximos 60%
 
-                    product.rows.forEach(row => {
-                        const quantidade = parseFloat(row['Sum Qtd Solicitada']) || 0;
-                        totalQuantity += quantidade;
-                        const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
-                        const storeInfo = masterStoreList.get(codigoLoja) || { name: 'N/A', rota: 'N/A' };
-                        
-                        const tr = document.createElement('tr');
-                        tr.dataset.rota = storeInfo.rota;
-                        tr.dataset.filial = storeInfo.name;
-                        tr.innerHTML = `<td>${storeInfo.rota}</td><td>${codigoLoja}</td><td>${storeInfo.name}</td><td>${row['Nº Pedido WMS'] || ''}</td><td>${quantidade}</td>`;
-                        tableBody.appendChild(tr);
+                    sectorsByUnits.forEach(([setor], index) => {
+                        if (index < highThreatCount) {
+                            threatMap.set(setor, 'threat-high');
+                        } else if (index < mediumThreatCount) {
+                            threatMap.set(setor, 'threat-medium');
+                        } else {
+                            threatMap.set(setor, 'threat-low');
+                        }
                     });
 
-                    const address = appState.productAddresses.get(itemCode) || 'N/A';
-                    const resultBlock = document.createElement('div');
-                    resultBlock.innerHTML = `
-                        <div class="summary-card">
-                            <h2>${product.descr} (Cód: ${itemCode})</h2>
-                            <p class="address-info">Endereço: <strong>${address}</strong></p>
-                            <p>Quantidade Total: ${Math.round(totalQuantity)}</p>
-                        </div>
-                        <table>
-                            <thead><tr><th>Rota</th><th>VD/L</th><th>Filial</th><th>Pedido WMS</th><th>Qtd.</th></tr></thead>
+                    // --- 2. Ordenação Customizada para Exibição ---
+                    const customOrder = ["AL FRAGIL", "AL BIG", "Alimentos", "Antibioticos", "MED BIG", "Medicamento 1", "Medicamento 2", "P1 BIG", "Perfumaria 1", "P2 BIG", "Perfumaria 2", "Perfumaria 3", "Piscotropicos", "SEM GIRO", "Romaneio", "Fralda", "Termolabeis", "Volumosos", "Visados", "Visados 2", "Baixo Giro", "Especial"];
+                    const orderMap = new Map(customOrder.map((name, index) => [name.toUpperCase(), index]));
+                    
+                    const getOrder = (sectorName) => {
+                        const upperCaseName = sectorName.toUpperCase();
+                        return orderMap.has(upperCaseName) ? orderMap.get(upperCaseName) : Infinity;
+                    };
+
+                    const sortedSetores = [...setoresData.entries()].sort((a, b) => {
+                        const orderA = getOrder(a[0]);
+                        const orderB = getOrder(b[0]);
+                        if (orderA !== orderB) return orderA - orderB;
+                        return a[0].localeCompare(b[0]); // Fallback para ordem alfabética
+                    });
+
+                    let tableRows = '';
+                    sortedSetores.forEach(([setor, data]) => {
+                        const unidades = data.totalQtd;
+                        const skus = data.products.size;
+                        const percent = totalQuantidadeGeral > 0 ? (unidades / totalQuantidadeGeral) * 100 : 0;
+                        const threatClass = threatMap.get(setor) || 'threat-low'; // Pega a classe de cor
+                        tableRows += `
+                            <tr class="${threatClass}">
+                                <td class="col-setor">${setor}</td>
+                                <td class="col-unidades">${formatNumber(unidades)}</td>
+                                <td class="col-skus">${formatNumber(skus)}</td>
+                                <td class="col-percent">${percent.toFixed(1).replace('.', ',')}%</td>
+                            </tr>`;
+                    });
+                    
+                    const totalPercent = sortedSetores.reduce((sum, [, data]) => sum + (data.totalQtd / totalQuantidadeGeral), 0) * 100;
+
+                    sectorSection.innerHTML = `
+                        <h2>Acompanhamento por Setor</h2>
+                        <button id="copy-table-btn" class="copy-image-btn">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                            Descarregar Tabela como Imagem
+                        </button>
+                        <table id="sector-analysis-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-setor">Setor</th>
+                                    <th class="col-unidades">Unidades</th>
+                                    <th class="col-skus">SKUs</th>
+                                    <th class="col-percent">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td class="col-setor">TOTAL</td>
+                                    <td class="col-unidades">${formatNumber(totalQuantidadeGeral)}</td>
+                                    <td class="col-skus">${formatNumber(totalSkusGeral)}</td>
+                                    <td class="col-percent">${totalPercent.toFixed(1).replace('.', ',')}%</td>
+                                </tr>
+                            </tfoot>
                         </table>`;
-                    resultBlock.querySelector('table').appendChild(tableBody);
-                    container.appendChild(resultBlock);
-                });
-                populateProductFilters(data);
-            }
 
-            function populateProductFilters(data) {
-                const { productRotaFilter, productFilialFilter } = UIElements;
-                productRotaFilter.innerHTML = '<option value="all">Todas as Rotas</option>';
-                productFilialFilter.innerHTML = '<option value="all">Todas as Filiais</option>';
-                const rotas = new Set();
-                const filiais = new Set();
+                } else {
+                    sectorSection.innerHTML = `<h2>Acompanhamento por Setor</h2><div class='placeholder-card'><p>Carregue a <strong>Planilha de Endereços</strong> para visualizar o acompanhamento por setor.</p></div>`;
+                }
+                container.appendChild(sectorSection);
 
-                data.forEach(row => {
-                    const codigoLoja = String(row['Loja Cross'] || row['Código da Loja'] || '').trim();
-                    const storeInfo = masterStoreList.get(codigoLoja);
-                    if (storeInfo) {
-                        if (storeInfo.rota) rotas.add(storeInfo.rota);
-                        if (storeInfo.name) filiais.add(storeInfo.name);
-                    }
-                });
-                
-                [...rotas].sort((a, b) => Number(a) - Number(b)).forEach(r => productRotaFilter.innerHTML += `<option value="${r}">Rota ${r}</option>`);
-                [...filiais].sort().forEach(f => productFilialFilter.innerHTML += `<option value="${f}">${f}</option>`);
-            }
-            
-            function populateRotaFilter(rotas) {
-                UIElements.rotaFilter.innerHTML = '<option value="all">Mostrar Todas as Rotas</option>';
-                if (rotas.length > 0) {
-                    rotas.sort((a, b) => Number(a) - Number(b)).forEach(rota => {
-                        UIElements.rotaFilter.innerHTML += `<option value="${rota}">Rota ${rota}</option>`;
+                // --- SEÇÃO 2: FATURAMENTO POR FILIAIS POR ROTA ---
+                const filialSection = document.createElement('div');
+                if (filialData && filialData.size > 0) {
+                    let filialTablesHTML = '';
+                    const sortedRotas = [...filialData.keys()].sort((a, b) => Number(a) - Number(b));
+
+                    sortedRotas.forEach(rota => {
+                        const filiaisDaRota = filialData.get(rota);
+                        if (!filiaisDaRota) return;
+
+                        const sortedFiliais = [...filiaisDaRota.entries()].sort((a, b) => b[1] - a[1]);
+                        const totalRota = sortedFiliais.reduce((sum, [, qtd]) => sum + qtd, 0);
+
+                        let filialRows = sortedFiliais.map(([filial, qtd]) => {
+                             const percent = totalRota > 0 ? (qtd / totalRota) * 100 : 0;
+                            return `<tr>
+                                        <td>${filial}</td>
+                                        <td>${formatNumber(qtd)}</td>
+                                        <td>${percent.toFixed(0)}%</td>
+                                    </tr>`;
+                        }).join('');
+
+                        filialTablesHTML += `
+                            <div class="sector-detail-card">
+                                <h3>Rota: ${rota}</h3>
+                                <div class="table-wrapper">
+                                    <table>
+                                        <thead><tr><th>Filial</th><th>Unidades</th><th>% da Rota</th></tr></thead>
+                                        <tbody>${filialRows}</tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td><strong>Total Rota</strong></td>
+                                                <td><strong>${formatNumber(totalRota)}</strong></td>
+                                                <td><strong>100%</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    filialSection.innerHTML = `
+                        <h2 style="margin-top: 3rem;">Faturamento por Filiais (agrupado por Rota)</h2>
+                        <div class="summary-card" style="border-color: var(--sector-primary); background-color: var(--sector-light); color: var(--sector-primary);">
+                             <h2>Resumo de Filiais</h2>
+                             <p>${formatNumber(totalUniqueFiliais)} filiais faturaram no período.</p>
+                        </div>
+                        <div class="sector-detail-grid">
+                            ${filialTablesHTML}
+                        </div>`;
+                } else {
+                    filialSection.innerHTML = `<h2 style="margin-top: 3rem;">Faturamento por Filiais</h2><div class='placeholder-card'><p>A <strong>Planilha de Itens</strong> precisa conter as colunas "Loja Cross" ou "Código da Loja" para esta análise.</p></div>`;
+                }
+                container.appendChild(filialSection);
+
+                // --- SEÇÃO 3: FILIAIS SEM FATURAMENTO ---
+                const semFaturamentoSection = document.createElement('div');
+                if (filiaisSemFaturamento && filiaisSemFaturamento.length > 0) {
+                    const listaFiliais = filiaisSemFaturamento.sort().map(filial => `<li>${filial}</li>`).join('');
+                    semFaturamentoSection.innerHTML = `
+                        <h2 style="margin-top: 3rem; color: var(--error-color); border-bottom-color: #f5c6cb;">Filiais Sem Faturamento</h2>
+                        <div class="summary-card" style="border-color: var(--error-color); background-color: #f8d7da; color: #721c24;">
+                             <h2>Atenção</h2>
+                             <p>${filiaisSemFaturamento.length} filiais não apresentaram faturamento no período.</p>
+                        </div>
+                        <div class="sector-detail-card">
+                             <h3>Lista de Filiais</h3>
+                             <div class="table-wrapper">
+                                <ul style="padding: 1.5rem 1.5rem 1.5rem 3rem; margin: 0; font-size: 0.9em; list-style-type: disc;">
+                                    ${listaFiliais}
+                                </ul>
+                             </div>
+                        </div>
+                    `;
+                }
+                container.appendChild(semFaturamentoSection);
+
+
+                // --- Event Listener para o botão de download (só adiciona se a tabela existir) ---
+                const copyBtn = document.getElementById('copy-table-btn');
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', () => {
+                        const originalTable = document.getElementById('sector-analysis-table');
+                        showNotification('A gerar imagem da tabela...', 'warning', 2000);
+                        
+                        const tableToCopy = originalTable.cloneNode(true);
+                        tableToCopy.style.position = 'absolute';
+                        tableToCopy.style.left = '-9999px';
+                        tableToCopy.style.top = '0px';
+                        tableToCopy.style.fontSize = '22px';
+                        tableToCopy.style.width = '1200px';
+                        document.body.appendChild(tableToCopy);
+
+                        html2canvas(tableToCopy, { 
+                            scale: 2,
+                            backgroundColor: '#ffffff',
+                            useCORS: true 
+                        }).then(canvas => {
+                            const link = document.createElement('a');
+                            link.download = 'analise_por_setor.png';
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                            showNotification('A imagem da tabela foi descarregada!', 'success');
+                        }).catch(err => {
+                            console.error("Erro do html2canvas:", err);
+                            showNotification('Falha ao gerar a imagem.', 'error');
+                        }).finally(() => {
+                            document.body.removeChild(tableToCopy);
+                        });
                     });
                 }
             }
+            
+            function displayProductAnalysisResults(data) {
+                const container = UIElements.containers.productAnalysis;
+                
+                const tableRows = data.map(item => `
+                    <tr>
+                        <td>${item.codigo}</td>
+                        <td>${item.skus}</td>
+                        <td class="text-right">${formatNumber(item.unidades)}</td>
+                        <td class="text-right">${formatNumber(item.qms)}</td>
+                        <td class="text-right">${formatNumber(item.cx)}</td>
+                        <td class="text-right">${item.percent.toFixed(2).replace('.', ',')}%</td>
+                        <td>${item.setor}</td>
+                        <td>${item.posicao}</td>
+                    </tr>
+                `).join('');
+                
+                // Calcula os totais com base nos dados recebidos (top 20)
+                const totalUnidades = data.reduce((sum, item) => sum + item.unidades, 0);
+                const totalCx = data.reduce((sum, item) => sum + item.cx, 0);
+                const totalPercent = data.reduce((sum, item) => sum + item.percent, 0);
 
+                container.innerHTML = `
+                    <h2>Acompanhamento de Maiores Saídas por SKU (Top 20)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>SKUS</th>
+                                <th class="text-right">Unidades</th>
+                                <th class="text-right">QMS</th>
+                                <th class="text-right">CX</th>
+                                <th class="text-right">%</th>
+                                <th>Setor</th>
+                                <th>Posição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2"><strong>TOTAL (TOP 20)</strong></td>
+                                <td class="text-right"><strong>${formatNumber(totalUnidades)}</strong></td>
+                                <td></td> <!-- Total QMS not meaningful -->
+                                <td class="text-right"><strong>${formatNumber(totalCx)}</strong></td>
+                                <td class="text-right"><strong>${totalPercent.toFixed(2).replace('.', ',')}%</strong></td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                `;
+            }
+
+            // NOVA FUNÇÃO: Carrega dados do armazenamento local ao iniciar
+            function loadDataFromStorage() {
+                const ordersData = JSON.parse(localStorage.getItem('ordersData'));
+                const nonReturnedOrdersArray = JSON.parse(localStorage.getItem('nonReturnedOrders'));
+                const sectorData = JSON.parse(localStorage.getItem('sectorData'));
+                const addressDataArray = JSON.parse(localStorage.getItem('addressData'));
+                const productMasterDataArray = JSON.parse(localStorage.getItem('productMasterData'));
+
+                let dataLoaded = false;
+
+                if (ordersData) {
+                    appState.ordersData = ordersData;
+                    UIElements.dropAreas.orders.classList.add('loaded');
+                    dataLoaded = true;
+                }
+                if (nonReturnedOrdersArray) {
+                    appState.nonReturnedOrders = new Set(nonReturnedOrdersArray);
+                    UIElements.dropAreas.status.classList.add('loaded');
+                    dataLoaded = true;
+                }
+                if (sectorData) {
+                    appState.sectorData = sectorData;
+                    UIElements.dropAreas.sector.classList.add('loaded');
+                    dataLoaded = true;
+                }
+                if (addressDataArray) {
+                    appState.addressData = new Map(addressDataArray);
+                    UIElements.dropAreas.address.classList.add('loaded');
+                    dataLoaded = true;
+                }
+                if (productMasterDataArray) {
+                    appState.productMasterData = new Map(productMasterDataArray);
+                    UIElements.dropAreas.productMaster.classList.add('loaded');
+                    dataLoaded = true;
+                }
+
+                if (dataLoaded) {
+                    showNotification('Dados da sessão anterior carregados.', 'success');
+                    UIElements.buttons.reloadFiles.classList.remove('hidden');
+                    runValidationAnalysis();
+                    runSectorAnalysis();
+                    runProductAnalysis();
+                    autoClosePanel();
+                }
+            }
+
+            // INICIALIZAÇÃO E EVENTOS
             function initializeEventListeners() {
-                setupFileDropArea(UIElements.fileInputArea, UIElements.fileInput);
-                setupFileDropArea(UIElements.addressFileInputArea, UIElements.addressFileInput);
-
+                // Configuração das abas
                 const switchView = (activeView) => {
                     Object.values(UIElements.views).forEach(view => view.classList.add('hidden'));
                     Object.values(UIElements.buttons).forEach(btn => btn.classList.remove('active'));
@@ -837,88 +1278,42 @@
                     UIElements.buttons[`switchTo${activeView.charAt(0).toUpperCase() + activeView.slice(1)}`].classList.add('active');
                 };
 
-                UIElements.buttons.switchToRota.addEventListener('click', () => switchView('rota'));
-                UIElements.buttons.switchToProduto.addEventListener('click', () => switchView('produto'));
-                UIElements.buttons.switchToSetor.addEventListener('click', () => switchView('setor'));
-                UIElements.buttons.reloadFiles.addEventListener('click', resetAnalysis);
+                UIElements.buttons.switchToValidation.addEventListener('click', () => switchView('validation'));
+                UIElements.buttons.switchToSector.addEventListener('click', () => switchView('sector'));
+                UIElements.buttons.switchToProduct.addEventListener('click', () => switchView('product'));
                 
-                UIElements.fileInput.addEventListener('change', handleOrdersFile);
-                UIElements.addressFileInput.addEventListener('change', handleAddressFile);
-
-                UIElements.rotaFilter.addEventListener('change', e => {
-                    const selectedRota = e.target.value;
-                    document.querySelectorAll('#rota-results-container .rota-block').forEach(block => {
-                        block.classList.toggle('hidden', !(selectedRota === 'all' || block.dataset.rota === selectedRota));
-                    });
-                });
-
-                UIElements.productSearchInput.addEventListener('input', e => {
-                    const searchTerm = e.target.value.trim().toUpperCase();
-                    UIElements.productSuggestions.innerHTML = '';
-                    UIElements.containers.produtoResults.innerHTML = '';
-                    UIElements.contentAreas.productAnalysis.classList.add('hidden');
-                    if (searchTerm.length < 3) return;
-
-                    const uniqueProducts = new Map();
-                    const searchTermIsNumber = /^\d+$/.test(searchTerm);
-
-                    appState.fullData.forEach(row => {
-                        const itemCode = normalizeProductCode(row['Item']);
-                        const itemDescr = String(row['Descr'] || '').trim().toUpperCase();
-                        if (itemCode && ((searchTermIsNumber && itemCode.includes(searchTerm)) || (!searchTermIsNumber && itemDescr.includes(searchTerm)))) {
-                            if (!uniqueProducts.has(itemCode)) uniqueProducts.set(itemCode, String(row['Descr'] || '').trim());
-                        }
-                    });
-
-                    uniqueProducts.forEach((descr, code) => {
-                        const item = document.createElement('div');
-                        item.className = 'suggestion-item';
-                        item.innerHTML = `${descr} <small>Cód: ${code}</small>`;
-                        item.addEventListener('click', () => {
-                            UIElements.productSearchInput.value = `${descr} (${code})`;
-                            UIElements.productSuggestions.innerHTML = '';
-                            const filteredData = appState.fullData.filter(row => normalizeProductCode(row['Item']) === code);
-                            displayProductResults(filteredData);
-                        });
-                        UIElements.productSuggestions.appendChild(item);
-                    });
+                // Configuração do painel de ficheiros
+                UIElements.fileControl.header.addEventListener('click', () => {
+                    UIElements.fileControl.panel.classList.toggle('open');
+                    UIElements.fileControl.icon.textContent = UIElements.fileControl.panel.classList.contains('open') ? '▲' : '▼';
                 });
                 
-                const applyProductFilters = () => {
-                    const selectedRota = UIElements.productRotaFilter.value;
-                    const selectedFilial = UIElements.productFilialFilter.value;
-                    document.querySelectorAll('#produto-results-container table tbody tr').forEach(row => {
-                        row.style.display = (selectedRota === 'all' || row.dataset.rota === selectedRota) && (selectedFilial === 'all' || row.dataset.filial === selectedFilial) ? '' : 'none';
-                    });
-                };
-                UIElements.productRotaFilter.addEventListener('change', applyProductFilters);
-                UIElements.productFilialFilter.addEventListener('change', applyProductFilters);
-
-                UIElements.copyProductDataBtn.addEventListener('click', () => {
-                    let textToCopy = "";
-                    document.querySelectorAll('#produto-results-container .summary-card').forEach((summary) => {
-                        textToCopy += `*${summary.querySelector('h2').textContent.trim()}*\n*${summary.querySelector('.address-info').textContent.trim()}*\n\n`;
-                        const table = summary.nextElementSibling;
-                        if (table) {
-                            table.querySelectorAll('tbody tr').forEach(row => {
-                                if (row.style.display !== 'none') {
-                                    const cells = row.querySelectorAll('td');
-                                    textToCopy += `- Rota: ${cells[0].textContent} | VD/L: ${cells[1].textContent} | Filial: ${cells[2].textContent} | Qtd: ${cells[4].textContent}\n`;
-                                }
-                            });
-                        }
-                        textToCopy += `\n--------------------\n\n`;
-                    });
-                    copyTextToClipboard(textToCopy.trim(), 'Dados copiados!');
+                // Configuração dos uploads
+                Object.keys(UIElements.dropAreas).forEach(key => {
+                    setupFileDropArea(UIElements.dropAreas[key], UIElements.inputs[key]);
                 });
 
-                document.addEventListener('click', e => {
-                    if (!e.target.closest('.search-container')) UIElements.productSuggestions.innerHTML = '';
+                UIElements.inputs.orders.addEventListener('change', handleOrdersFile);
+                UIElements.inputs.status.addEventListener('change', handleStatusFile);
+                UIElements.inputs.sector.addEventListener('change', handleSectorFile);
+                UIElements.inputs.address.addEventListener('change', handleAddressFile);
+                UIElements.inputs.productMaster.addEventListener('change', handleProductMasterFile);
+                
+                UIElements.buttons.reloadFiles.addEventListener('click', () => {
+                    localStorage.removeItem('ordersData');
+                    localStorage.removeItem('nonReturnedOrders');
+                    localStorage.removeItem('sectorData');
+                    localStorage.removeItem('addressData');
+                    localStorage.removeItem('productMasterData');
+                    showNotification('Dados guardados foram limpos. A reiniciar...', 'warning');
+                    setTimeout(() => location.reload(), 1500);
                 });
             }
 
-            document.addEventListener('DOMContentLoaded', initializeEventListeners);
-
+            document.addEventListener('DOMContentLoaded', () => {
+                loadDataFromStorage();
+                initializeEventListeners();
+            });
         })();
     </script>
 </body>
